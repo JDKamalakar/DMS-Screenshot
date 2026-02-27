@@ -3,7 +3,7 @@
     "name": "DMS Screenshot",
     "description": "Control DMS screenshot actions from the Widget & Control Center",
     "version": "1.0.0",
-    "author": "jfchenier",
+    "author": "JDKamalakar",
     "icon": "screenshot_region",
     "type": "widget",
     "component": "./ScreenshotWidget.qml",
@@ -13,7 +13,7 @@
         "control-center"
     ],
     "category": "utilities",
-    "repo": "https://github.com/jfchenier/dms-screenshot",
+    "repo": "https://github.com/JDKamalakar/dmsScreenshot",
     "compositors": [
         "niri"
     ],
