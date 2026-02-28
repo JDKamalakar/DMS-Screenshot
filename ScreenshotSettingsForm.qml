@@ -13,8 +13,6 @@ Column {
     property string pluginId: "dmsScreenshot"
 
     property string mode: "interactive"
-    property string targetWindow: ""
-    property var windowList: []
     
     property bool showPointer: true
     property bool saveToDisk: true
@@ -24,36 +22,8 @@ Column {
     property string format: "png"
     property int quality: 90
     property bool copyToClipboard: true
-    property bool showNotify: true
 
     signal saveSetting(string key, var value)
-
-    Process {
-        id: windowFetcher
-        command: ["bash", "-c", "niri msg windows | grep 'Title:' | sed 's/.*Title: \"//;s/\"$//'"]
-        running: false
-        stdout: SplitParser {
-            onRead: function(data) {
-                let title = data.trim();
-                if (title !== "") {
-                    let temp = root.windowList.slice();
-                    if (temp.indexOf(title) === -1) {
-                        temp.push(title);
-                        root.windowList = temp;
-                    }
-                    if (root.targetWindow === "") {
-                        root.targetWindow = title;
-                        root.saveSetting("targetWindow", title);
-                    }
-                }
-            }
-        }
-    }
-
-    function refreshWindows() {
-        root.windowList = [];
-        windowFetcher.running = true;
-    }
 
     function loadSetting(key, defaultValue) {
         if (pluginService) {
@@ -64,16 +34,12 @@ Column {
 
     Component.onCompleted: {
         root.mode = loadSetting("mode", "interactive");
-        root.targetWindow = loadSetting("targetWindow", "");
         root.showPointer = loadSetting("showPointer", true);
         root.saveToDisk = loadSetting("saveToDisk", true);
         root.customPath = loadSetting("customPath", "") || "";
         root.format = loadSetting("format", "png") || "png";
         root.quality = loadSetting("quality", 90);
         root.copyToClipboard = loadSetting("copyToClipboard", true);
-        root.showNotify = loadSetting("showNotify", true);
-        
-        refreshWindows();
     }
 
     // --- Capture Mode Section ---
@@ -98,34 +64,25 @@ Column {
             DankListView {
                 id: modeList
                 width: parent.width
-                height: 220 + (root.mode === "window" ? 88 : 0)
+                height: 176 
                 interactive: false
                 
                 model: [
-                    { label: "Interactive", val: "interactive", ic: "touch_app", type: "mode" },
-                    { label: "Focused Screen", val: "full", ic: "monitor", type: "mode" },
-                    { label: "All Screens", val: "all", ic: "monitor_weight", type: "mode" },
-                    { label: "Repeat Last", val: "last", ic: "history", type: "mode" },
-                    { label: "Specific Window", val: "window", ic: "window", type: "mode" },
-                    { label: "Select Window", val: "dropdown", ic: "desktop_windows", type: "dropdown" }
+                    { label: "Interactive", val: "interactive", ic: "touch_app" },
+                    { label: "Focused Screen", val: "full", ic: "monitor" },
+                    { label: "All Screens", val: "all", ic: "monitor_weight" },
+                    { label: "Repeat Last", val: "last", ic: "history" }
                 ]
                 
                 delegate: Rectangle {
                     id: modeDelegate
                     width: modeList.width
-                    
-                    height: {
-                        if (modelData.type === "dropdown") return root.mode === "window" ? 88 : 0;
-                        return 44;
-                    }
-                    
-                    visible: height > 0
-                    clip: true 
+                    height: 44
                     radius: Theme.cornerRadius
                     
                     color: {
-                        if (modelData.type === "mode" && root.mode === modelData.val) return Theme.withAlpha(Theme.primary, 0.15);
-                        if (modeMouseArea.containsMouse && modelData.type === "mode") return Theme.withAlpha(Theme.surfaceText, 0.06);
+                        if (root.mode === modelData.val) return Theme.withAlpha(Theme.primary, 0.15);
+                        if (modeMouseArea.containsMouse) return Theme.withAlpha(Theme.surfaceText, 0.06);
                         return "transparent";
                     }
                     
@@ -133,62 +90,25 @@ Column {
                         id: modeRipple
                         cornerRadius: Theme.cornerRadius
                         rippleColor: Theme.primary
-                        visible: modelData.type === "mode"
                     }
 
                     RowLayout {
                         anchors.fill: parent; anchors.margins: Theme.spacingS; spacing: Theme.spacingM
-                        visible: modelData.type === "mode"
                         DankIcon { name: modelData.ic; color: root.mode === modelData.val ? Theme.primary : Theme.surfaceVariantText; size: Theme.iconSize }
                         StyledText { text: modelData.label; color: root.mode === modelData.val ? Theme.primary : Theme.surfaceText; Layout.fillWidth: true }
                         DankIcon { name: "check"; visible: root.mode === modelData.val; color: Theme.primary; size: Theme.iconSize }
-                    }
-
-                    Column {
-                        anchors.fill: parent; anchors.margins: Theme.spacingS; spacing: 8
-                        visible: modelData.type === "dropdown"
-
-                        RowLayout {
-                            width: parent.width
-                            DankIcon { name: modelData.ic; color: Theme.surfaceVariantText; size: Theme.iconSize }
-                            StyledText { text: modelData.label; color: Theme.surfaceText; Layout.fillWidth: true }
-                        }
-
-                        DankDropdown {
-                            width: parent.width
-                            options: root.windowList
-                            currentValue: root.targetWindow !== "" ? root.targetWindow : (root.windowList.length > 0 ? root.windowList[0] : "No windows found")
-                            onValueChanged: function(value) {
-                                root.targetWindow = value;
-                                root.saveSetting("targetWindow", value);
-                            }
-                        }
                     }
 
                     MouseArea { 
                         id: modeMouseArea
                         anchors.fill: parent
                         hoverEnabled: true
-                        
-                        acceptedButtons: modelData.type === "mode" ? Qt.LeftButton : Qt.NoButton
-                        cursorShape: modelData.type === "mode" ? Qt.PointingHandCursor : Qt.ArrowCursor
-                        
-                        // MAGIC TRICK: FORCES SCROLL WHEEL TO PASS TO THE PARENT FLICKABLE
-                        onWheel: function(wheel) {
-                            wheel.accepted = false;
-                        }
-                        
-                        onPressed: function(mouse) { 
-                            if (modelData.type === "mode") modeRipple.trigger(mouse.x, mouse.y); 
-                        }
+                        cursorShape: Qt.PointingHandCursor
+                        onWheel: function(wheel) { wheel.accepted = false; }
+                        onPressed: function(mouse) { modeRipple.trigger(mouse.x, mouse.y); }
                         onClicked: { 
-                            if (modelData.type === "mode") {
-                                root.mode = modelData.val; 
-                                root.saveSetting("mode", modelData.val); 
-                                if (root.mode === "window") {
-                                    root.refreshWindows();
-                                }
-                            }
+                            root.mode = modelData.val; 
+                            root.saveSetting("mode", modelData.val); 
                         } 
                     }
                 }
@@ -202,10 +122,13 @@ Column {
         height: optionsColumnCC.implicitHeight + Theme.spacingM * 2
         radius: Theme.cornerRadius
         color: Theme.withAlpha(Theme.surfaceContainerHighest, 0.4)
+
+        Behavior on height { NumberAnimation { duration: 100; easing.type: Easing.OutQuart } }
         
         Column {
             id: optionsColumnCC
-            anchors.left: parent.left; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
+            anchors.top: parent.top
+            anchors.left: parent.left; anchors.right: parent.right
             anchors.margins: Theme.spacingM
             spacing: Theme.spacingS
             
@@ -220,6 +143,9 @@ Column {
                 width: parent.width
                 height: 268 + (root.format === "jpg" ? 48 : 0)
                 interactive: false
+                currentIndex: -1
+
+                Behavior on height { NumberAnimation { duration: 100; easing.type: Easing.OutQuart } }
                 
                 model: [
                     { t: "Copy to Clipboard", i: "content_copy", k: "copyToClipboard", type: "toggle" },
@@ -240,8 +166,13 @@ Column {
                         if (modelData.type === "pathField") return 48;
                         return 44; 
                     }
+
+                    Behavior on height { NumberAnimation { duration: 100; easing.type: Easing.OutQuart } }
                     
                     visible: height > 0
+                    opacity: height > 0 ? 1 : 0
+                    Behavior on opacity { NumberAnimation { duration: 150 } }
+
                     clip: true 
                     radius: Theme.cornerRadius
                     color: optMouseArea.containsMouse ? Theme.withAlpha(Theme.surfaceText, 0.06) : "transparent"
@@ -253,6 +184,7 @@ Column {
                         visible: modelData.type === "toggle"
                     }
 
+                    // 1. UI FOR TOGGLES
                     RowLayout {
                         anchors.fill: parent; anchors.margins: Theme.spacingS; spacing: Theme.spacingM
                         visible: modelData.type === "toggle"
@@ -264,12 +196,14 @@ Column {
                         }
                     }
 
+                    // 2. UI FOR FORMAT BUTTON GROUP (Aligned to match toggles)
                     Column {
                         anchors.fill: parent; anchors.margins: Theme.spacingS; spacing: 8
                         visible: modelData.type === "format"
                         RowLayout {
                             width: parent.width
-                            DankIcon { name: modelData.i; color: Theme.surfaceVariantText; size: Theme.iconSize }
+                            spacing: Theme.spacingM // Unified gap
+                            DankIcon { name: modelData.i; color: Theme.surfaceVariantText; size: Theme.iconSize } // Standard size
                             StyledText { text: modelData.t; color: Theme.surfaceText; Layout.fillWidth: true }
                         }
                         DankButtonGroup {
@@ -286,11 +220,12 @@ Column {
                         }
                     }
 
+                    // 3. UI FOR TEXT FIELDS (Aligned icons and gap)
                     RowLayout {
-                        anchors.fill: parent; anchors.margins: 4; anchors.leftMargin: Theme.spacingS; anchors.rightMargin: Theme.spacingS; spacing: Theme.spacingM
+                        anchors.fill: parent; anchors.margins: Theme.spacingS; spacing: Theme.spacingM
                         visible: modelData.type === "qualityField" || modelData.type === "pathField"
 
-                        DankIcon { name: modelData.i; color: Theme.surfaceVariantText; size: Theme.iconSize }
+                        DankIcon { name: modelData.i; color: Theme.surfaceVariantText; size: Theme.iconSize } // Standard size
                         
                         DankTextField {
                             Layout.fillWidth: true
@@ -316,15 +251,9 @@ Column {
                         id: optMouseArea
                         anchors.fill: parent
                         hoverEnabled: true
-                        
                         acceptedButtons: modelData.type === "toggle" ? Qt.LeftButton : Qt.NoButton
                         cursorShape: modelData.type === "toggle" ? Qt.PointingHandCursor : Qt.ArrowCursor
-                        
-                        // MAGIC TRICK: FORCES SCROLL WHEEL TO PASS TO THE PARENT FLICKABLE
-                        onWheel: function(wheel) {
-                            wheel.accepted = false;
-                        }
-                        
+                        onWheel: function(wheel) { wheel.accepted = false; }
                         onPressed: function(mouse) { 
                             if(modelData.type === "toggle") optRipple.trigger(mouse.x, mouse.y); 
                         }

@@ -11,17 +11,20 @@ import QtCore
 PluginComponent {
     id: root
 
+    // -- Settings ----------------------------------------------------------------------
     property string mode: pluginData.mode || "interactive"
-    property string targetWindow: pluginData.targetWindow || ""
     property bool showPointer: pluginData.showPointer !== undefined ? pluginData.showPointer : true
     property bool saveToDisk: pluginData.saveToDisk !== undefined ? pluginData.saveToDisk : true
     property string customPath: pluginData.customPath || ""
+    
+    // New DMS Settings
     property string format: pluginData.format || "png"
     property int quality: pluginData.quality !== undefined ? pluginData.quality : 90
     property bool copyToClipboard: pluginData.copyToClipboard !== undefined ? pluginData.copyToClipboard : true
     property bool showNotify: pluginData.showNotify !== undefined ? pluginData.showNotify : true
     property bool showToast: pluginData.showToast !== undefined ? pluginData.showToast : true
 
+    // -- Internal ----------------------------------------------------------------------
     property bool isTakingScreenshot: false
     property string defaultPath: ""
 
@@ -48,7 +51,6 @@ PluginComponent {
         if (root.mode === "full") return "Focused Screen"
         if (root.mode === "all") return "All Screens"
         if (root.mode === "last") return "Repeat Last"
-        if (root.mode === "window") return "Specific Window"
         return "Screenshot"
     }
 
@@ -65,7 +67,6 @@ PluginComponent {
 
         if (typeof PluginService !== "undefined" && PluginService) {
             root.mode = PluginService.loadPluginData("dmsScreenshot", "mode", "interactive") || "interactive";
-            root.targetWindow = PluginService.loadPluginData("dmsScreenshot", "targetWindow", "");
             root.showPointer = PluginService.loadPluginData("dmsScreenshot", "showPointer", true);
             root.saveToDisk = PluginService.loadPluginData("dmsScreenshot", "saveToDisk", true);
             root.customPath = PluginService.loadPluginData("dmsScreenshot", "customPath", "") || "";
@@ -95,14 +96,7 @@ PluginComponent {
                 }
             }
         } else {
-            let dmsStr = "dms screenshot";
-            
-            if (root.mode === "window" && root.targetWindow !== "") {
-                dmsStr += " window \"" + root.targetWindow + "\"";
-            } else {
-                dmsStr += " " + root.mode;
-            }
-
+            let dmsStr = "dms screenshot " + root.mode;
             if (root.showPointer) dmsStr += " --cursor on";
             if (!root.saveToDisk) dmsStr += " --no-file";
             if (!root.copyToClipboard) dmsStr += " --no-clipboard";
@@ -128,26 +122,18 @@ PluginComponent {
         }
     }
 
+    // -- CC Detail Settings -------------------------------------------------------------
     ccDetailContent: Component {
         Rectangle {
             implicitHeight: 450
             radius: Theme.cornerRadius
             color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
-            
-            StyledText {
-                id: settingsHeader
-                font.pixelSize: Theme.fontSizeLarge
-                color: Theme.surfaceText
-                font.weight: Font.Medium
-                anchors.top: parent.top
-                anchors.left: parent.left
-                anchors.margins: Theme.spacingM
-            }
 
             DankButton {
                 id: captureBtn
                 anchors.right: parent.right
-                anchors.verticalCenter: settingsHeader.verticalCenter
+                anchors.top: parent.top
+                anchors.topMargin: Theme.spacingM
                 anchors.rightMargin: Theme.spacingM
                 height: 32
                 width: 110
@@ -162,7 +148,7 @@ PluginComponent {
             }
 
             DankFlickable {
-                anchors.top: settingsHeader.bottom
+                anchors.top: captureBtn.bottom
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
@@ -179,7 +165,6 @@ PluginComponent {
                     defaultPath: root.defaultPath
                     onSaveSetting: function(key, value) {
                         if (key === "mode") root.mode = value;
-                        if (key === "targetWindow") root.targetWindow = value;
                         if (key === "showPointer") root.showPointer = value;
                         if (key === "saveToDisk") root.saveToDisk = value;
                         if (key === "customPath") root.customPath = value;
@@ -202,6 +187,7 @@ PluginComponent {
         }
     }
 
+    // -- Popout Settings ----------------------------------------------------------------
     popoutWidth: 320
     popoutHeight: 450
     
@@ -232,7 +218,6 @@ PluginComponent {
                     defaultPath: root.defaultPath
                     onSaveSetting: function(key, value) {
                         if (key === "mode") root.mode = value;
-                        if (key === "targetWindow") root.targetWindow = value;
                         if (key === "showPointer") root.showPointer = value;
                         if (key === "saveToDisk") root.saveToDisk = value;
                         if (key === "customPath") root.customPath = value;

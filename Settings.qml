@@ -49,8 +49,7 @@ PluginSettings {
             {label: "Interactive (Region)", value: "interactive"},
             {label: "Focused Screen", value: "full"},
             {label: "All Screens", value: "all"},
-            {label: "Repeat Last Region", value: "last"},
-            {label: "Specific Window", value: "window"}
+            {label: "Repeat Last Region", value: "last"}
         ]
         defaultValue: "interactive"
     }
