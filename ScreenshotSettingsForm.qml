@@ -192,7 +192,8 @@ Column {
                         StyledText { text: modelData.t; color: Theme.surfaceText; Layout.fillWidth: true }
                         DankToggle { 
                             checked: modelData.type === "toggle" ? root[modelData.k] : false
-                            enabled: false 
+                            enabled: true 
+                            opacity: 1.0
                         }
                     }
 
