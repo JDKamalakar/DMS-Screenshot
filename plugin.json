@@ -13,7 +13,7 @@
         "dankbar-widget",
         "control-center"
     ],
-    "repo": "https://github.com/JDKamalakar/dmsScreenshot",
+    "repo": "https://github.com/JDKamalakar/DMS-Screenshot",
     "compositors": [
         "any"
     ],
