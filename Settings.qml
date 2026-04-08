@@ -203,6 +203,15 @@ PluginSettings {
                         width: parent.width
                         wrapMode: Text.WordWrap
                     }
+                    StyledText {
+                        text: "Tip: Use formats like dd_mm_yyyy Screenshot or %d-%m-%Y_%H%M%S"
+                        font.pixelSize: Theme.fontSizeSmall
+                        font.italic: true
+                        color: Theme.surfaceVariantText
+                        width: parent.width
+                        wrapMode: Text.WordWrap
+                        opacity: 0.8
+                    }
                 }
             }
 
@@ -278,9 +287,47 @@ PluginSettings {
                 ToggleSetting {
                     width: parent.width - 22 - Theme.spacingM
                     settingKey: "stdout"
-                    label: "Output to Stdout"
+                    label: "Screenshot Editor"
                     description: "Pipe the image output to stdout (--stdout)"
                     defaultValue: false
+                }
+            }
+
+            Row {
+                width: parent.width
+                spacing: Theme.spacingM
+                visible: root.stdout
+                DankIcon { name: "input"; size: 22; anchors.verticalCenter: parent.verticalCenter; opacity: 0.8 }
+                Column {
+                    width: parent.width - 22 - Theme.spacingM
+                    spacing: Theme.spacingXS
+                    StyledText {
+                        text: "Editor Pipe Command"
+                        font.pixelSize: Theme.fontSizeMedium
+                        font.weight: Font.Medium
+                        color: Theme.surfaceText
+                    }
+                    StyledText {
+                        text: "Command after ' | ' (e.g. swappy -f -)"
+                        font.pixelSize: Theme.fontSizeSmall
+                        color: Theme.surfaceVariantText
+                        width: parent.width
+                        wrapMode: Text.WordWrap
+                    }
+                }
+            }
+
+            Row {
+                width: parent.width
+                spacing: Theme.spacingM
+                visible: root.stdout
+                StringSetting {
+                    width: parent.width
+                    settingKey: "pipeCommand"
+                    label: ""
+                    description: ""
+                    placeholder: "swappy -f -"
+                    defaultValue: ""
                 }
             }
         }

@@ -24,8 +24,8 @@ Column {
     property bool copyToClipboard: true
     property bool showNotify: true
     property bool stdout: false
-    property string filename: ""
-    property string output: ""
+    property string pipeCommand: ""
+    property string output: "" (deprecated)
 
     signal saveSetting(string key, var value)
 
@@ -46,8 +46,7 @@ Column {
         root.copyToClipboard = loadSetting("copyToClipboard", true);
         root.showNotify = loadSetting("showNotify", true);
         root.stdout = loadSetting("stdout", false);
-        root.filename = loadSetting("filename", "") || "";
-        root.output = loadSetting("output", "") || "";
+        root.pipeCommand = loadSetting("pipeCommand", "") || "";
     }
 
     // --- Capture Mode Section ---
@@ -149,7 +148,7 @@ Column {
             DankListView {
                 id: optionsList
                 width: parent.width
-                height: 404 + (root.format === "jpg" ? 48 : 0)
+                height: 312 + (root.format === "jpg" ? 48 : 0)
                 interactive: false
                 currentIndex: -1
 
@@ -159,11 +158,9 @@ Column {
                     { t: "Copy to Clipboard", i: "content_copy", k: "copyToClipboard", type: "toggle" },
                     { t: "Save to Disk", i: "save", k: "saveToDisk", type: "toggle" },
                     { t: "Show Pointer", i: "mouse", k: "showPointer", type: "toggle" },
-                    { t: "Show Notifications", i: "notifications", k: "showNotify", type: "toggle" },
-                    { t: "Output to Stdout", i: "output", k: "stdout", type: "toggle" },
+                    { t: "Screenshot Editor", i: "output", k: "stdout", type: "toggle" },
                     { t: "Image Format", i: "image", k: "format", type: "format" },
                     { t: "JPEG Quality", i: "high_quality", k: "quality", type: "qualityField" },
-                    { t: "Custom Filename", i: "terminal", k: "filename", type: "textField", placeholder: "screenshot.png" },
                     { t: "Custom Directory", i: "folder", k: "customPath", type: "pathField" }
                 ]
                 
