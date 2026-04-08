@@ -182,6 +182,42 @@ PluginSettings {
                     defaultValue: ""
                 }
             }
+
+            Row {
+                width: parent.width
+                spacing: Theme.spacingM
+                DankIcon { name: "terminal"; size: 22; anchors.verticalCenter: parent.verticalCenter; opacity: 0.8 }
+                Column {
+                    width: parent.width - 22 - Theme.spacingM
+                    spacing: Theme.spacingXS
+                    StyledText {
+                        text: "Custom Filename"
+                        font.pixelSize: Theme.fontSizeMedium
+                        font.weight: Font.Medium
+                        color: Theme.surfaceText
+                    }
+                    StyledText {
+                        text: "Override the default filename (--filename)"
+                        font.pixelSize: Theme.fontSizeSmall
+                        color: Theme.surfaceVariantText
+                        width: parent.width
+                        wrapMode: Text.WordWrap
+                    }
+                }
+            }
+
+            Row {
+                width: parent.width
+                spacing: Theme.spacingM
+                StringSetting {
+                    width: parent.width
+                    settingKey: "filename"
+                    label: ""
+                    description: ""
+                    placeholder: "screenshot.png"
+                    defaultValue: ""
+                }
+            }
         }
     }
 
@@ -232,6 +268,19 @@ PluginSettings {
                     label: "Copy to Clipboard"
                     description: "Copy the resulting image to your clipboard"
                     defaultValue: true
+                }
+            }
+
+            Row {
+                width: parent.width
+                spacing: Theme.spacingM
+                DankIcon { name: "output"; size: 22; anchors.verticalCenter: parent.verticalCenter; opacity: 0.8 }
+                ToggleSetting {
+                    width: parent.width - 22 - Theme.spacingM
+                    settingKey: "stdout"
+                    label: "Output to Stdout"
+                    description: "Pipe the image output to stdout (--stdout)"
+                    defaultValue: false
                 }
             }
         }
