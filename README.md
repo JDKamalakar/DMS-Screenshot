@@ -19,19 +19,19 @@ A sleek, integrated screenshot utility specifically built for **Dank Material Sh
 ## 📸 Interface Preview
 
 ### 🖥️ Main Display
-| Dankbar UI |
+| POP-Up UI |
 | :--- |
-| <img width="190" height="363" alt="Dank-Bar_Widget" src="https://github.com/user-attachments/assets/efe52376-9e6e-42a3-9a1b-b15513d0150d" /> |
+| <img width="190" height="363" alt="Dank-Bar_Widget" src="assets/Dank-Bar_Widget.png" /> |
 
 
 | Control Center UI |
 | :--- |
-| <img width="602" height="296" alt="Control-Center" src="https://github.com/user-attachments/assets/ba60454b-faab-4076-ac8e-b2ba6ec67fab" /> |
+| <img width="602" height="296" alt="Control-Center" src="assets/Control-Center.png" /> |
  
 ### ⚙️ Configuration
 | Settings UI |
 | :--- |
-| <img width="614" height="945" alt="Settings" src="https://github.com/user-attachments/assets/d7ff5ebe-e4d0-458b-abe2-ac302b72060b" /> |
+| <img width="614" height="1024" alt="Settings" src="assets/Settings.png" /> |
 
 ## 🛠️ Installation
 
