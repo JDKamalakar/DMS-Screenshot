@@ -110,15 +110,15 @@ Column {
                         property bool isFirst: index === 0
                         property bool isLast:  index === modeDelegate.totalCount - 1
                         
-                        property real tlr: isFirst ? outerRadius : innerRadius
-                        property real trr: isFirst ? outerRadius : innerRadius
-                        property real blr: isLast ? outerRadius : innerRadius
-                        property real brr: isLast ? outerRadius : innerRadius
+                        property real tlr: isSelected ? 21.5 : (isFirst ? outerRadius : innerRadius)
+                        property real trr: isSelected ? 21.5 : (isFirst ? outerRadius : innerRadius)
+                        property real blr: isSelected ? 21.5 : (isLast ? outerRadius : innerRadius)
+                        property real brr: isSelected ? 21.5 : (isLast ? outerRadius : innerRadius)
 
-                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 150 } }
-                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 150 } }
-                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 150 } }
-                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 150 } }
+                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
+                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
+                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
+                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
 
                         property color paintColor: isSelected
                             ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.18)
@@ -141,18 +141,22 @@ Column {
 
                         onPaint: {
                             var ctx = getContext("2d");
+                            var x = 0.5, y = 0.5;
+                            var w = width - 1, h = height - 1;
+                            
                             ctx.reset();
                             ctx.beginPath();
-                            ctx.moveTo(tlrAnim, 0);
-                            ctx.lineTo(width - trrAnim, 0);
-                            ctx.arcTo(width, 0, width, trrAnim, trrAnim);
-                            ctx.lineTo(width, height - brrAnim);
-                            ctx.arcTo(width, height, width - brrAnim, height, brrAnim);
-                            ctx.lineTo(blrAnim, height);
-                            ctx.arcTo(0, height, 0, height - blrAnim, blrAnim);
-                            ctx.lineTo(0, tlrAnim);
-                            ctx.arcTo(0, 0, tlrAnim, 0, tlrAnim);
+                            ctx.moveTo(x + tlrAnim, y);
+                            ctx.lineTo(x + w - trrAnim, y);
+                            ctx.arcTo(x + w, y, x + w, y + trrAnim, trrAnim);
+                            ctx.lineTo(x + w, y + h - brrAnim);
+                            ctx.arcTo(x + w, y + h, x + w - brrAnim, y + h, brrAnim);
+                            ctx.lineTo(x + blrAnim, y + h);
+                            ctx.arcTo(x, y + h, x, y + h - blrAnim, blrAnim);
+                            ctx.lineTo(x, y + tlrAnim);
+                            ctx.arcTo(x, y, x + tlrAnim, y, tlrAnim);
                             ctx.closePath();
+                            
                             ctx.fillStyle = paintColor;
                             ctx.fill();
                             ctx.strokeStyle = paintBorder;
@@ -162,6 +166,7 @@ Column {
 
                         Rectangle { 
                             anchors.fill: parent; radius: parent.tlr; color: "white"
+                            anchors.margins: 0.5
                             opacity: hovered ? 0.05 : 0; Behavior on opacity { NumberAnimation { duration: 150 } } 
                         }
                     }
@@ -187,10 +192,12 @@ Column {
                             name: "check"
                             color: Theme.primary
                             size: Theme.iconSize
+                            rotation: isSelected ? 0 : -90
                             opacity: isSelected ? 1 : 0
-                            scale: isSelected ? 1 : 0.5
+                            scale: isSelected ? 1 : 0.4
+                            Behavior on rotation { NumberAnimation { duration: 400; easing.type: Easing.OutBack } }
                             Behavior on opacity { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
-                            Behavior on scale   { NumberAnimation { duration: 300; easing.type: Easing.OutBack } }
+                            Behavior on scale   { NumberAnimation { duration: 400; easing.type: Easing.OutBack } }
                         }
                     }
 
