@@ -135,20 +135,17 @@ PluginComponent {
             spacing: Theme.spacingM
 
             // --- Capture Header Card ---
-            Item {
+            StyledRect {
                 width: parent.width; height: 68
-                Rectangle {
-                    anchors.fill: parent; radius: Theme.cornerRadius * 1.1
-                    gradient: Gradient {
-                        GradientStop { position: 0.0; color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.18) }
-                        GradientStop { position: 1.0; color: Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.08) }
-                    }
-                    layer.enabled: true
-                    layer.effect: DropShadow {
-                        transparentBorder: true; horizontalOffset: 0; verticalOffset: 3
-                        radius: 12.0; samples: 24
-                        color: Theme.withAlpha(Theme.shadowColor || "#000000", 0.35)
-                    }
+                radius: Theme.cornerRadius
+                color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
+                border.width: 1
+                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                layer.enabled: true
+                layer.effect: DropShadow {
+                    transparentBorder: true; horizontalOffset: 0; verticalOffset: 3
+                    radius: 12.0; samples: 24
+                    color: Theme.withAlpha(Theme.shadowColor || "#000000", 0.35)
                 }
                 RowLayout {
                     anchors.fill: parent; anchors.margins: Theme.spacingM; spacing: Theme.spacingM
@@ -283,20 +280,17 @@ PluginComponent {
                 topPadding: 0; bottomPadding: 2
 
                 // --- Capture Header Card ---
-                Item {
+                StyledRect {
                     width: parent.width; height: 68
-                    Rectangle {
-                        anchors.fill: parent; radius: Theme.cornerRadius * 1.1
-                        gradient: Gradient {
-                            GradientStop { position: 0.0; color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15) }
-                            GradientStop { position: 1.0; color: Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.08) }
-                        }
-                        layer.enabled: true
-                        layer.effect: DropShadow {
-                            transparentBorder: true; horizontalOffset: 0; verticalOffset: 3
-                            radius: 12.0; samples: 24
-                            color: Theme.withAlpha(Theme.shadowColor || "#000000", 0.35)
-                        }
+                    radius: Theme.cornerRadius
+                    color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
+                    border.width: 1
+                    border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                    layer.enabled: true
+                    layer.effect: DropShadow {
+                        transparentBorder: true; horizontalOffset: 0; verticalOffset: 3
+                        radius: 12.0; samples: 24
+                        color: Theme.withAlpha(Theme.shadowColor || "#000000", 0.35)
                     }
                     RowLayout {
                         anchors.fill: parent; anchors.margins: Theme.spacingM; spacing: Theme.spacingM
