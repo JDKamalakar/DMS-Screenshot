@@ -138,11 +138,24 @@ PluginComponent {
             ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
             ScrollBar.vertical.policy: ScrollBar.AlwaysOff
 
-            Column {
-                id: ccDetailCol
+            Loader {
                 width: parent.width
-                padding: 16
-                spacing: Theme.spacingM
+                asynchronous: true
+                sourceComponent: ccDetailInternal
+                
+                opacity: status === Loader.Ready ? 1 : 0
+                Behavior on opacity { NumberAnimation { duration: 20 } }
+            }
+        }
+    }
+
+    Component {
+        id: ccDetailInternal
+        Column {
+            id: ccDetailCol
+            width: parent.width
+            padding: 16
+            spacing: Theme.spacingM
 
             // --- Capture Header Card ---
             StyledRect {
@@ -270,7 +283,6 @@ PluginComponent {
                 } // function
             } // ScreenshotSettingsForm
         } // Column
-        } // ScrollView
     } // Component
 
     // -- Popout Settings ----------------------------------------------------------------
@@ -284,12 +296,25 @@ PluginComponent {
             detailsText: ""
             showCloseButton: false
 
-            Column {
-                id: popoutMainCol
+            Loader {
                 width: parent.width
-                topPadding: 0
-                bottomPadding: 2
-                spacing: Theme.spacingM
+                asynchronous: true
+                sourceComponent: popoutInternal
+                
+                opacity: status === Loader.Ready ? 1 : 0
+                Behavior on opacity { NumberAnimation { duration: 100 } }
+            }
+        }
+    }
+
+    Component {
+        id: popoutInternal
+        Column {
+            id: popoutMainCol
+            width: parent.width
+            topPadding: 0
+            bottomPadding: 2
+            spacing: Theme.spacingM
 
                 // --- Capture Header Card ---
                 StyledRect {
@@ -417,7 +442,6 @@ PluginComponent {
 
             }
         }
-    }
 
     horizontalBarPill: Component {
         Row {
