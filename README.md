@@ -1,68 +1,72 @@
-# 📸 DMS-Screenshot
+<div align="center">
 
-[![DMS Version](https://img.shields.io/badge/DMS-Compatible-purple.svg)](https://github.com/Dank-Material-Shell)
-[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/JDKamalakar/DMS-Screenshot/graphs/commit-activity)
+<a href="https://github.com/JDKamalakar/DMS-Screenshot">
+    <img src="assets/icons/screenshot.svg" alt="Screenshot logo" title="Screenshot logo" width="80"/>
+</a>
 
-A sleek, integrated screenshot utility specifically built for **Dank Material Shell**. Capture your screen with ease and enjoy a workflow that fits perfectly into the DMS aesthetic.
+# Screenshot [App](#)
 
----
+### Premium Screen Capture
+Integrated screenshot utility for Dank Material Shell – capture your workflow with precision and style.
 
-## ✨ Features
+[![DMS Compatible](https://img.shields.io/badge/DMS-Compatible-purple.svg?labelColor=27303D)](https://github.com/Dank-Material-Shell)
+[![License](https://img.shields.io/badge/License-DMS-blue.svg?labelColor=27303D&color=0877d2)](https://github.com/DankMaterialShell)
+[![Maintenance Status](https://img.shields.io/badge/Status-Maintained-green.svg?labelColor=27303D&color=946300)](https://github.com/JDKamalakar/DMS-Screenshot/graphs/commit-activity)
 
-* **Area Selection:** Capture specific parts of your screen with a simple drag.
-* **Full Desktop Capture:** Snap your entire workspace instantly.
-* **Window Snapping:** Quickly capture specific application windows.
-* **DMS Integration:** Designed to look and feel like a native part of your shell environment.
-* **Quick Save/Copy:** Automatically save to your pictures folder or copy to clipboard for instant sharing.
+## Download
 
----
-## 📸 Interface Preview
-
-### 🖥️ Main Display
-| POP-Up UI |
-| :--- |
-| <img width="190" height="363" alt="Dank-Bar_Widget" src="assets/Dank-Bar_Widget.png" /> |
+[![DMS Plugin Gallery](https://img.shields.io/badge/DMS-Plugin%20Gallery-06599d?style=flat-square&logo=linux&logoColor=white)](https://danklinux.com/plugins)
 
 
-| Control Center UI |
-| :--- |
-| <img width="602" height="296" alt="Control-Center" src="assets/Control-Center.png" /> |
- 
-### ⚙️ Configuration
-| Settings UI |
-| :--- |
-| <img width="614" height="1024" alt="Settings" src="assets/Settings.png" /> |
+*Requires Dank Material Shell (DMS) 1.0 or higher.*
 
-## 🛠️ Installation
+## Features
 
-### 🚀 Recommended: DMS Plugin Manager
-The fastest way to get up and running:
-1. Open your **DMS Settings**.
-2. Navigate to the **Plugin Manager** tab.
-3. Search for `DMS-Screenshot` and click **Install**.
-4. You can also find it on the [Dank Linux Plugin Gallery](https://danklinux.com/plugins#/).
+<div align="left">
 
-### 🛠️ Manual Installation
-For manual setup or development:
-1. Clone this repository into your DMS extensions/plugins folder:
-   ```bash
-   git clone [https://github.com/JDKamalakar/DMS-Screenshot.git](https://github.com/JDKamalakar/DMS-Screenshot.git)
+* **Area Selection**: Capture specific parts of your screen with a simple drag-and-drop.
+* **Full Desktop**: Snap your entire workspace across all monitors instantly.
+* **Smart Snapping**: Quickly capture specific application windows with precision.
+* **Material Aesthetics**: Smooth animations and transitions that feel native to DMS.
+* **Integrated Workflow**: Automatically save to disk, copy to clipboard, or pipe to an editor.
+* **Deep Settings**: Full control over output format, quality, and notification behavior.
 
----
+</div>
 
-### 🐛 Feedback & Contributions
+## Interface
 
-Found a bug or have a feature request? Let’s make this better together.
+<div align="center">
+  <img src="assets/Dank-Bar_Widget.png" width="45%" />
+  <img src="assets/QS.png" width="45%" />
+</div>
 
-* **Report Issues:** [GitHub Issues](https://github.com/JDKamalakar/DMS-Screenshot/issues/new/choose)
-* **Contributions:** Pull requests are welcome! Please ensure your code follows the shell's design guidelines.
+## Configuration
 
----
+<div align="center">
+  <img src="assets/Settings.png" width="80%" />
+</div>
 
-## 📜 License
+## Contributing
+
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+Before reporting a new issue, take a look at the [FAQ](https://github.com/JDKamalakar/DMS-Screenshot/wiki), the [changelog](https://github.com/JDKamalakar/DMS-Screenshot/releases) and the already opened [issues](https://github.com/JDKamalakar/DMS-Screenshot/issues).
+
+
+### Credits
+
+Built with ❤️ for the [Dank Material Shell](https://github.com/DankMaterialShell) community.
+
+<a href="https://github.com/JDKamalakar/DMS-Screenshot/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=JDKamalakar/DMS-Screenshot" alt="Screenshot contributors" title="Screenshot contributors" width="100"/>
+</a>
+
+### Disclaimer
+
+This application is an independent utility for Dank Material Shell.
+
+### 📜 License
 
 Part of DankMaterialShell. Check the main repository for license information.
 
-## 🤝 Credits
-
-Built for [DankMaterialShell](https://github.com/DankMaterialShell)
+</div>
