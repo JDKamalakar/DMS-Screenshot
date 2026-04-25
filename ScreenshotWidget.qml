@@ -50,6 +50,7 @@ PluginComponent {
     ccWidgetPrimaryText: "Screenshot"
     ccWidgetSecondaryText: _getModeText()
     ccWidgetIsActive: false 
+    ccDetailHeight: 480
 
     function _getModeText() {
         if (root.mode === "interactive") return "Interactive Mode"
@@ -159,7 +160,7 @@ PluginComponent {
 
             // --- Capture Header Card ---
             StyledRect {
-                width: parent.width - 32; anchors.horizontalCenter: parent.horizontalCenter; height: 68
+                width: parent.width - 32; anchors.horizontalCenter: parent.horizontalCenter; height: 72
                 radius: Theme.cornerRadius
                 color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
                 border.width: 1
@@ -173,9 +174,9 @@ PluginComponent {
                 RowLayout {
                     anchors.fill: parent; anchors.margins: Theme.spacingM; spacing: Theme.spacingM
                     Rectangle {
-                        width: 36; height: 36; radius: 18
+                        width: 42; height: 42; radius: 21
                         color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.2)
-                        DankIcon { name: "screenshot_region"; size: 20; color: Theme.surfaceText; anchors.centerIn: parent }
+                        DankIcon { name: "screenshot_region"; size: 24; color: Theme.surfaceText; anchors.centerIn: parent }
                     }
                     Column {
                         Layout.fillWidth: true; Layout.alignment: Qt.AlignVCenter; spacing: 0
@@ -206,11 +207,37 @@ PluginComponent {
                             }
                         }
                     }
-                    DankButton {
+                    Item {
                         id: captureBtnCC
-                        height: 36; width: 130
-                        text: "" // Using manual Row for perfect alignment and animation
+                        height: 38; width: 110
+                        Layout.alignment: Qt.AlignVCenter
                         
+                        scale: captureAreaCC.pressed ? 0.9 : (captureAreaCC.containsMouse ? 1.05 : 1.0)
+                        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+
+                        MouseArea {
+                            id: captureAreaCC
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onPressed: mouse => captureRippleCC.trigger(mouse.x, mouse.y)
+                            onClicked: {
+                                root.takeScreenshot();
+                                if (typeof PopoutService !== "undefined" && PopoutService)
+                                    PopoutService.closeControlCenter();
+                            }
+                        }
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: Theme.cornerRadius
+                            color: captureAreaCC.containsMouse ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15) : Qt.rgba(Theme.surfaceContainer.r, Theme.surfaceContainer.g, Theme.surfaceContainer.b, 0.4)
+                            border.width: 1
+                            border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, captureAreaCC.containsMouse ? 0.3 : 0.15)
+                            Behavior on color { ColorAnimation { duration: 150 } }
+                            Behavior on border.color { ColorAnimation { duration: 150 } }
+                        }
+
                         Row {
                             anchors.centerIn: parent
                             spacing: 8
@@ -219,34 +246,34 @@ PluginComponent {
                                 id: captureBtnIconCC
                                 name: "screenshot_region"
                                 size: 18
-                                color: "white"
+                                color: Theme.primary
                                 
-                                SequentialAnimation on rotation {
-                                    running: captureBtnCC.hovered
+                                SequentialAnimation {
+                                    running: captureAreaCC.containsMouse
                                     loops: Animation.Infinite
-                                    NumberAnimation { to: -8; duration: 150; easing.type: Easing.InOutQuad }
-                                    NumberAnimation { to: 8; duration: 150; easing.type: Easing.InOutQuad }
-                                    NumberAnimation { to: 0; duration: 150; easing.type: Easing.InOutQuad }
+                                    onStopped: captureBtnIconCC.rotation = 0
+                                    NumberAnimation { target: captureBtnIconCC; property: "rotation"; to: -8; duration: 150; easing.type: Easing.InOutQuad }
+                                    NumberAnimation { target: captureBtnIconCC; property: "rotation"; to: 8; duration: 150; easing.type: Easing.InOutQuad }
+                                    NumberAnimation { target: captureBtnIconCC; property: "rotation"; to: 0; duration: 150; easing.type: Easing.InOutQuad }
                                     PauseAnimation { duration: 400 }
                                 }
                             }
                             
                             StyledText {
                                 text: "Capture"
-                                color: "white"
+                                color: Theme.primary
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.bold: true
                                 verticalAlignment: Text.AlignVCenter
                             }
                         }
 
-                        onClicked: {
-                            root.takeScreenshot();
-                            if (typeof PopoutService !== "undefined" && PopoutService)
-                                PopoutService.closeControlCenter();
+                        DankRipple {
+                            id: captureRippleCC
+                            rippleColor: Theme.surfaceText
+                            cornerRadius: Theme.cornerRadius
+                            anchors.fill: parent
                         }
-                        
-                        onHoveredChanged: if (hovered) root.showTooltip(root._getModeText(), captureBtnCC)
                     }
                 }
             }
@@ -318,7 +345,7 @@ PluginComponent {
 
                 // --- Capture Header Card ---
                 StyledRect {
-                    width: parent.width; anchors.horizontalCenter: parent.horizontalCenter; height: 68
+                    width: parent.width; anchors.horizontalCenter: parent.horizontalCenter; height: 72
                     radius: Theme.cornerRadius
                     color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
                     border.width: 1
@@ -332,9 +359,9 @@ PluginComponent {
                     RowLayout {
                         anchors.fill: parent; anchors.margins: Theme.spacingM; spacing: Theme.spacingM
                         Rectangle {
-                            width: 38; height: 38; radius: 19
+                            width: 42; height: 42; radius: 21
                             color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.2)
-                            DankIcon { name: "screenshot_region"; size: 22; color: Theme.surfaceText; anchors.centerIn: parent }
+                            DankIcon { name: "screenshot_region"; size: 24; color: Theme.surfaceText; anchors.centerIn: parent }
                         }
                         Column {
                             Layout.fillWidth: true; Layout.alignment: Qt.AlignVCenter; spacing: 0
@@ -365,10 +392,35 @@ PluginComponent {
                                 }
                             }
                         }
-                        DankButton {
+                        Item {
                             id: captureBtnPop
-                            height: 36; width: 120
-                            text: "" // Using manual Row for perfect alignment and animation
+                            height: 38; width: 105
+                            Layout.alignment: Qt.AlignVCenter
+                            
+                            scale: captureAreaPop.pressed ? 0.9 : (captureAreaPop.containsMouse ? 1.05 : 1.0)
+                            Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+
+                            MouseArea {
+                                id: captureAreaPop
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onPressed: mouse => captureRipplePop.trigger(mouse.x, mouse.y)
+                                onClicked: {
+                                    root.closePopout();
+                                    root.takeScreenshot();
+                                }
+                            }
+
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: Theme.cornerRadius
+                                color: captureAreaPop.containsMouse ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15) : Qt.rgba(Theme.surfaceContainer.r, Theme.surfaceContainer.g, Theme.surfaceContainer.b, 0.4)
+                                border.width: 1
+                                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, captureAreaPop.containsMouse ? 0.3 : 0.15)
+                                Behavior on color { ColorAnimation { duration: 150 } }
+                                Behavior on border.color { ColorAnimation { duration: 150 } }
+                            }
 
                             Row {
                                 anchors.centerIn: parent
@@ -378,33 +430,34 @@ PluginComponent {
                                     id: captureBtnIconPop
                                     name: "screenshot_region"
                                     size: 18
-                                    color: "white"
+                                    color: Theme.primary
                                     
-                                    SequentialAnimation on rotation {
-                                        running: captureBtnPop.hovered
+                                    SequentialAnimation {
+                                        running: captureAreaPop.containsMouse
                                         loops: Animation.Infinite
-                                        NumberAnimation { to: -8; duration: 150; easing.type: Easing.InOutQuad }
-                                        NumberAnimation { to: 8; duration: 150; easing.type: Easing.InOutQuad }
-                                        NumberAnimation { to: 0; duration: 150; easing.type: Easing.InOutQuad }
+                                        onStopped: captureBtnIconPop.rotation = 0
+                                        NumberAnimation { target: captureBtnIconPop; property: "rotation"; to: -8; duration: 150; easing.type: Easing.InOutQuad }
+                                        NumberAnimation { target: captureBtnIconPop; property: "rotation"; to: 8; duration: 150; easing.type: Easing.InOutQuad }
+                                        NumberAnimation { target: captureBtnIconPop; property: "rotation"; to: 0; duration: 150; easing.type: Easing.InOutQuad }
                                         PauseAnimation { duration: 400 }
                                     }
                                 }
                                 
                                 StyledText {
                                     text: "Capture"
-                                    color: "white"
+                                    color: Theme.primary
                                     font.pixelSize: Theme.fontSizeSmall
                                     font.bold: true
                                     verticalAlignment: Text.AlignVCenter
                                 }
                             }
 
-                            onClicked: {
-                                root.closePopout();
-                                root.takeScreenshot();
+                            DankRipple {
+                                id: captureRipplePop
+                                rippleColor: Theme.surfaceText
+                                cornerRadius: Theme.cornerRadius
+                                anchors.fill: parent
                             }
-                            
-                            onHoveredChanged: if (hovered) root.showTooltip(root._getModeText(), captureBtnPop)
                         }
                     }
                 }

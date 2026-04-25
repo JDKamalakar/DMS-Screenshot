@@ -54,6 +54,7 @@ Column {
     StyledRect {
         width: parent.width; anchors.horizontalCenter: parent.horizontalCenter
         height: modeColumnCC.implicitHeight + Theme.spacingM * 2
+        Behavior on height { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
         radius: Theme.cornerRadius
         color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
 
@@ -165,39 +166,35 @@ Column {
                         }
 
                         Rectangle { 
-                            anchors.fill: parent; radius: parent.tlr; color: "white"
+                            anchors.fill: parent; radius: parent.tlrAnim; color: "white"
                             anchors.margins: 0.5
                             opacity: hovered ? 0.05 : 0; Behavior on opacity { NumberAnimation { duration: 150 } } 
                         }
                     }
 
-                    DankRipple { id: modeRipple; cornerRadius: modeBg.tlr; rippleColor: Theme.primary }
+                    DankRipple { id: modeRipple; anchors.fill: parent; cornerRadius: modeBg.tlrAnim; rippleColor: Theme.primary }
 
                     RowLayout {
-                        anchors.fill: parent; anchors.margins: Theme.spacingS; spacing: Theme.spacingM
+                        anchors.fill: parent; anchors.leftMargin: 12; anchors.rightMargin: 12; spacing: Theme.spacingS
                         DankIcon { 
                             name: modelData.ic
                             color: isSelected ? Theme.primary : Theme.surfaceVariantText
-                            size: Theme.iconSize
+                            size: 18
                             Behavior on color { ColorAnimation { duration: 200 } }
                         }
                         StyledText { 
-                            text: modelData.label
+                            text: modelData.label; font.pixelSize: Theme.fontSizeSmall
+                            font.weight: isSelected ? Font.Bold : Font.Normal 
                             color: isSelected ? Theme.primary : Theme.surfaceText
-                            font.bold: isSelected
-                            Layout.fillWidth: true
+                            Layout.fillWidth: true 
                             Behavior on color { ColorAnimation { duration: 200 } }
                         }
                         DankIcon { 
-                            name: "check"
-                            color: Theme.primary
-                            size: Theme.iconSize
-                            rotation: isSelected ? 0 : -90
-                            opacity: isSelected ? 1 : 0
-                            scale: isSelected ? 1 : 0.4
-                            Behavior on rotation { NumberAnimation { duration: 400; easing.type: Easing.OutBack } }
-                            Behavior on opacity { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
-                            Behavior on scale   { NumberAnimation { duration: 400; easing.type: Easing.OutBack } }
+                            name: "check_circle"; size: 16; color: Theme.primary
+                            scale: isSelected ? 1.0 : 0.0
+                            opacity: isSelected ? 1.0 : 0.0
+                            Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
+                            Behavior on opacity { NumberAnimation { duration: 200 } }
                         }
                     }
 
@@ -294,7 +291,7 @@ Column {
                     readonly property bool hovered: optMouseArea.containsMouse
 
                     property real baseHeight: {
-                        if (modelData.type === "format")       return 88;
+                        if (modelData.type === "format")       return 72;
                         if (modelData.type === "qualityField") return root.format === "jpg" ? 72 : 0;
                         if (modelData.type === "pathField")    return 72;
                         return 44; 
@@ -365,29 +362,32 @@ Column {
                         }
                     }
 
-                    DankRipple { id: optRipple; cornerRadius: optBg.tlr; rippleColor: Theme.primary; visible: modelData.type === "toggle" }
+                    DankRipple { id: optRipple; anchors.fill: parent; cornerRadius: optBg.tlrAnim; rippleColor: Theme.primary; visible: modelData.type === "toggle" }
 
                     RowLayout {
-                        anchors.fill: parent; anchors.margins: Theme.spacingS; spacing: Theme.spacingM
+                        anchors.fill: parent; anchors.leftMargin: 12; anchors.rightMargin: 12; spacing: Theme.spacingS
                         visible: modelData.type === "toggle"
-                        DankIcon { name: modelData.i; color: Theme.surfaceVariantText; size: Theme.iconSize }
-                        StyledText { text: modelData.t; color: Theme.surfaceText; Layout.fillWidth: true }
+                        DankIcon { name: modelData.i; color: Theme.surfaceVariantText; size: 18 }
+                        StyledText { text: modelData.t; color: Theme.surfaceText; font.pixelSize: Theme.fontSizeSmall; Layout.fillWidth: true }
                         DankToggle { 
+                            scale: 0.85
                             checked: root[modelData.k]
                             onClicked: { root[modelData.k] = checked; root.saveSetting(modelData.k, checked); }
                         }
                     }
 
                     ColumnLayout {
-                        anchors.fill: parent; anchors.margins: Theme.spacingS; spacing: 8
+                        anchors.left: parent.left; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
+                        anchors.leftMargin: 12; anchors.rightMargin: 12; spacing: 4
                         visible: modelData.type === "format"
                         RowLayout {
-                            Layout.fillWidth: true; spacing: Theme.spacingM
-                            DankIcon { name: modelData.i; color: Theme.surfaceVariantText; size: Theme.iconSize }
-                            StyledText { text: modelData.t; color: Theme.surfaceText; Layout.fillWidth: true }
+                            Layout.fillWidth: true; spacing: Theme.spacingS
+                            DankIcon { name: modelData.i; color: Theme.surfaceVariantText; size: 18 }
+                            StyledText { text: modelData.t; color: Theme.surfaceText; font.pixelSize: Theme.fontSizeSmall; Layout.fillWidth: true }
                         }
                         DankButtonGroup {
-                            Layout.fillWidth: true; buttonHeight: 32; minButtonWidth: 60
+                            Layout.fillWidth: true; buttonHeight: 30; minButtonWidth: 54
+                            scale: 0.85
                             model: ["PNG", "JPG", "PPM"]
                             currentIndex: root.format === "png" ? 0 : (root.format === "jpg" ? 1 : 2)
                             onSelectionChanged: function(index, selected) {
@@ -400,24 +400,26 @@ Column {
                         }
                     }
 
-                    RowLayout {
-                        anchors.fill: parent; anchors.margins: Theme.spacingS; spacing: Theme.spacingM
+                    ColumnLayout {
+                        anchors.left: parent.left; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
+                        anchors.leftMargin: 12; anchors.rightMargin: 12; spacing: 4
                         visible: modelData.type === "pathField" || modelData.type === "qualityField"
-                        DankIcon { name: modelData.i; color: Theme.surfaceVariantText; size: Theme.iconSize }
-                        Column {
-                            Layout.fillWidth: true; spacing: 2
-                            StyledText { text: modelData.t; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText }
-                            DankTextField {
-                                width: parent.width; height: 32
-                                text: modelData.k === "quality" ? root.quality.toString() : root.customPath
-                                placeholderText: modelData.k === "quality" ? "90" : root.defaultPath
-                                onTextEdited: {
-                                    if (modelData.k === "quality") {
-                                        var v = parseInt(text);
-                                        if (!isNaN(v)) { root.quality = v; root.saveSetting("quality", v); }
-                                    } else {
-                                        root.customPath = text; root.saveSetting("customPath", text);
-                                    }
+                        RowLayout {
+                            Layout.fillWidth: true; spacing: Theme.spacingS
+                            DankIcon { name: modelData.i; color: Theme.surfaceVariantText; size: 18 }
+                            StyledText { text: modelData.t; font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; Layout.fillWidth: true }
+                        }
+                        DankTextField {
+                            Layout.fillWidth: true; height: 28
+                            font.pixelSize: Theme.fontSizeSmall - 2
+                            text: modelData.k === "quality" ? root.quality.toString() : root.customPath
+                            placeholderText: modelData.k === "quality" ? "90" : root.defaultPath
+                            onEditingFinished: {
+                                if (modelData.k === "quality") {
+                                    var v = parseInt(text);
+                                    if (!isNaN(v)) { root.quality = v; root.saveSetting("quality", v); }
+                                } else {
+                                    root.customPath = text; root.saveSetting("customPath", text);
                                 }
                             }
                         }
