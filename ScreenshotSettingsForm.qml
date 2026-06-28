@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Shapes
 import Quickshell.Io
 import qs.Common
 import qs.Widgets
@@ -48,11 +49,11 @@ Column {
         radius: Theme.cornerRadius
         color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
         border.width: 1
-        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+        border.color: Theme.withAlpha(Theme.primary, 0.15)
 
         Column {
             id: modeColumnCC
-            width: parent.width - Theme.spacingM * 2
+            width: Math.max(0, parent.width - Theme.spacingM * 2)
             x: Theme.spacingM
             y: Theme.spacingM
             spacing: Theme.spacingS
@@ -85,10 +86,11 @@ Column {
                     readonly property bool hovered: modeMouseArea.containsMouse
                     readonly property int  totalCount: 3   // fixed 3 items
 
-                    // Dynamic background with Canvas for selective corner rounding
-                    Canvas {
+                    // Dynamic background with Shape for selective corner rounding
+                    Shape {
                         id: modeBg
                         anchors.fill: parent
+                        anchors.margins: 0.5
 
                         property real innerRadius: 6
                         property real outerRadius: 12
@@ -100,55 +102,42 @@ Column {
                         property real blr: isSelected ? 21.5 : (isLast ? outerRadius : innerRadius)
                         property real brr: isSelected ? 21.5 : (isLast ? outerRadius : innerRadius)
 
-                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
-                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
-                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
-                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
+                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
 
-                        property color paintColor: isSelected
-                            ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.18)
-                            : (hovered
-                                ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1)
-                                : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.04))
-                        Behavior on paintColor { ColorAnimation { duration: 150 } }
-                        
-                        property color paintBorder: isSelected
-                            ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.6)
-                            : (hovered
-                                ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.4)
-                                : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.15))
-                        Behavior on paintBorder { ColorAnimation { duration: 150 } }
+                                        readonly property color colorActive: Theme.withAlpha(Theme.primary, 0.18)
+                                        readonly property color colorHovered: Theme.withAlpha(Theme.primary, 0.1)
+                                        readonly property color colorInactive: Theme.withAlpha(Theme.secondary, 0.04)
+                                        
+                                        readonly property color borderActive: Theme.withAlpha(Theme.primary, 0.6)
+                                        readonly property color borderHovered: Theme.withAlpha(Theme.primary, 0.4)
+                                        readonly property color borderInactive: Theme.withAlpha(Theme.secondary, 0.15)
 
-                        onTlrAnimChanged: requestPaint()
-                        onTrrAnimChanged: requestPaint()
-                        onBlrAnimChanged: requestPaint()
-                        onBrrAnimChanged: requestPaint()
-                        onPaintColorChanged: requestPaint()
-                        onPaintBorderChanged: requestPaint()
+                                        property color paintColor: isSelected ? colorActive : (hovered ? colorHovered : colorInactive)
+                                        
+                                        property color paintBorder: isSelected ? borderActive : (hovered ? borderHovered : borderInactive)
 
-                        onPaint: {
-                            var ctx = getContext("2d");
-                            var x = 0.5, y = 0.5;
-                            var w = width - 1, h = height - 1;
+                        ShapePath {
+                            fillColor: modeBg.paintColor
+                            strokeColor: modeBg.paintBorder
+                            strokeWidth: 1
+
+                            startX: modeBg.tlrAnim
+                            startY: 0
+
+                            PathLine { x: modeBg.width - modeBg.trrAnim; y: 0 }
+                            PathArc { x: modeBg.width; y: modeBg.trrAnim; radiusX: modeBg.trrAnim; radiusY: modeBg.trrAnim; direction: PathArc.Clockwise }
                             
-                            ctx.reset();
-                            ctx.beginPath();
-                            ctx.moveTo(x + tlrAnim, y);
-                            ctx.lineTo(x + w - trrAnim, y);
-                            ctx.arcTo(x + w, y, x + w, y + trrAnim, trrAnim);
-                            ctx.lineTo(x + w, y + h - brrAnim);
-                            ctx.arcTo(x + w, y + h, x + w - brrAnim, y + h, brrAnim);
-                            ctx.lineTo(x + blrAnim, y + h);
-                            ctx.arcTo(x, y + h, x, y + h - blrAnim, blrAnim);
-                            ctx.lineTo(x, y + tlrAnim);
-                            ctx.arcTo(x, y, x + tlrAnim, y, tlrAnim);
-                            ctx.closePath();
+                            PathLine { x: modeBg.width; y: modeBg.height - modeBg.brrAnim }
+                            PathArc { x: modeBg.width - modeBg.brrAnim; y: modeBg.height; radiusX: modeBg.brrAnim; radiusY: modeBg.brrAnim; direction: PathArc.Clockwise }
                             
-                            ctx.fillStyle = paintColor;
-                            ctx.fill();
-                            ctx.strokeStyle = paintBorder;
-                            ctx.lineWidth = 1;
-                            ctx.stroke();
+                            PathLine { x: modeBg.blrAnim; y: modeBg.height }
+                            PathArc { x: 0; y: modeBg.height - modeBg.blrAnim; radiusX: modeBg.blrAnim; radiusY: modeBg.blrAnim; direction: PathArc.Clockwise }
+                            
+                            PathLine { x: 0; y: modeBg.tlrAnim }
+                            PathArc { x: modeBg.tlrAnim; y: 0; radiusX: modeBg.tlrAnim; radiusY: modeBg.tlrAnim; direction: PathArc.Clockwise }
                         }
 
                         Rectangle { 
@@ -166,21 +155,21 @@ Column {
                             name: modelData.ic
                             color: isSelected ? Theme.primary : Theme.surfaceVariantText
                             size: 18
-                            Behavior on color { ColorAnimation { duration: 200 } }
+                            Behavior on color { ColorAnimation { duration: 150 } }
                         }
                         StyledText { 
                             text: modelData.label; font.pixelSize: Theme.fontSizeSmall
                             font.weight: isSelected ? Font.Bold : Font.Normal 
                             color: isSelected ? Theme.primary : Theme.surfaceText
                             Layout.fillWidth: true 
-                            Behavior on color { ColorAnimation { duration: 200 } }
+                            Behavior on color { ColorAnimation { duration: 150 } }
                         }
                         DankIcon { 
                             name: "check_circle"; size: 16; color: Theme.primary
                             scale: isSelected ? 1.0 : 0.0
                             opacity: isSelected ? 1.0 : 0.0
-                            Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
-                            Behavior on opacity { NumberAnimation { duration: 200 } }
+                            Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                            Behavior on opacity { NumberAnimation { duration: 150 } }
                         }
                     }
 
@@ -209,13 +198,13 @@ Column {
         radius: Theme.cornerRadius
         color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
         border.width: 1
-        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+        border.color: Theme.withAlpha(Theme.primary, 0.15)
 
 
 
         Column {
             id: optionsColumnCC
-            width: parent.width - Theme.spacingM * 2
+            width: Math.max(0, parent.width - Theme.spacingM * 2)
             x: Theme.spacingM
             y: Theme.spacingM
             spacing: Theme.spacingS
@@ -284,19 +273,22 @@ Column {
                     readonly property real groupMargin: (isLast && vIdx !== vk.length - 1 && baseHeight > 0) ? 8 : 0
                     
                     height: baseHeight + groupMargin
+                    Behavior on height { NumberAnimation { duration: 250; easing.type: Easing.OutExpo } }
                     
                     visible: height > 0 || baseHeight > 0
                     opacity: baseHeight > 0 ? 1 : 0
+                    Behavior on opacity { NumberAnimation { duration: 150 } }
 
                     Item {
                         id: contentCard
                         width: parent.width
-                        height: parent.baseHeight
+                        height: parent.height - parent.groupMargin
                         clip: true
 
-                    Canvas {
+                    Shape {
                         id: optBg
                         anchors.fill: parent
+                        anchors.margins: 0.5
 
                         property real innerRadius: 6
                         property real outerRadius: 12
@@ -306,42 +298,33 @@ Column {
                         property real blr: isLast ? outerRadius : innerRadius
                         property real brr: isLast ? outerRadius : innerRadius
 
-                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 200; easing.type: Easing.OutQuad } }
-                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 200; easing.type: Easing.OutQuad } }
-                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 200; easing.type: Easing.OutQuad } }
-                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 200; easing.type: Easing.OutQuad } }
+                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
 
-                        property color paintColor: hovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.04)
-                        Behavior on paintColor { ColorAnimation { duration: 150 } }
-                        property color paintBorder: hovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.4) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.15)
-                        Behavior on paintBorder { ColorAnimation { duration: 150 } }
+                        property color paintColor: hovered ? Theme.withAlpha(Theme.primary, 0.1) : Theme.withAlpha(Theme.secondary, 0.04)
+                        property color paintBorder: hovered ? Theme.withAlpha(Theme.primary, 0.4) : Theme.withAlpha(Theme.secondary, 0.15)
 
-                        onTlrAnimChanged: requestPaint()
-                        onTrrAnimChanged: requestPaint()
-                        onBlrAnimChanged: requestPaint()
-                        onBrrAnimChanged: requestPaint()
-                        onPaintColorChanged: requestPaint()
-                        onPaintBorderChanged: requestPaint()
+                        ShapePath {
+                            fillColor: optBg.paintColor
+                            strokeColor: optBg.paintBorder
+                            strokeWidth: 1
 
-                        onPaint: {
-                            var ctx = getContext("2d");
-                            ctx.reset();
-                            ctx.beginPath();
-                            ctx.moveTo(tlrAnim, 0);
-                            ctx.lineTo(width - trrAnim, 0);
-                            ctx.arcTo(width, 0, width, trrAnim, trrAnim);
-                            ctx.lineTo(width, height - brrAnim);
-                            ctx.arcTo(width, height, width - brrAnim, height, brrAnim);
-                            ctx.lineTo(blrAnim, height);
-                            ctx.arcTo(0, height, 0, height - blrAnim, blrAnim);
-                            ctx.lineTo(0, tlrAnim);
-                            ctx.arcTo(0, 0, tlrAnim, 0, tlrAnim);
-                            ctx.closePath();
-                            ctx.fillStyle = paintColor;
-                            ctx.fill();
-                            ctx.strokeStyle = paintBorder;
-                            ctx.lineWidth = 1;
-                            ctx.stroke();
+                            startX: optBg.tlrAnim
+                            startY: 0
+
+                            PathLine { x: optBg.width - optBg.trrAnim; y: 0 }
+                            PathArc { x: optBg.width; y: optBg.trrAnim; radiusX: optBg.trrAnim; radiusY: optBg.trrAnim; direction: PathArc.Clockwise }
+                            
+                            PathLine { x: optBg.width; y: optBg.height - optBg.brrAnim }
+                            PathArc { x: optBg.width - optBg.brrAnim; y: optBg.height; radiusX: optBg.brrAnim; radiusY: optBg.brrAnim; direction: PathArc.Clockwise }
+                            
+                            PathLine { x: optBg.blrAnim; y: optBg.height }
+                            PathArc { x: 0; y: optBg.height - optBg.blrAnim; radiusX: optBg.blrAnim; radiusY: optBg.blrAnim; direction: PathArc.Clockwise }
+                            
+                            PathLine { x: 0; y: optBg.tlrAnim }
+                            PathArc { x: optBg.tlrAnim; y: 0; radiusX: optBg.tlrAnim; radiusY: optBg.tlrAnim; direction: PathArc.Clockwise }
                         }
                     }
 
@@ -368,16 +351,95 @@ Column {
                             DankIcon { name: modelData.i; color: Theme.surfaceVariantText; size: 18 }
                             StyledText { text: modelData.t; color: Theme.surfaceText; font.pixelSize: Theme.fontSizeSmall; Layout.fillWidth: true }
                         }
-                        DankButtonGroup {
-                            Layout.fillWidth: true; buttonHeight: 30; minButtonWidth: 54
-                            scale: 0.85
-                            model: ["PNG", "JPG", "PPM"]
-                            currentIndex: root.format === "png" ? 0 : (root.format === "jpg" ? 1 : 2)
-                            onSelectionChanged: function(index, selected) {
-                                if (selected) {
-                                    var fmts = ["png", "jpg", "ppm"];
-                                    root.format = fmts[index];
-                                    root.saveSetting("format", fmts[index]);
+                        RowLayout {
+                            Layout.fillWidth: true; height: 30
+                            scale: 0.85; transformOrigin: Item.Left
+                            spacing: 4
+                            Repeater {
+                                model: [
+                                    { label: "PNG", val: "png" },
+                                    { label: "JPG", val: "jpg" },
+                                    { label: "PPM", val: "ppm" }
+                                ]
+                                delegate: Item {
+                                    Layout.fillWidth: true; Layout.fillHeight: true
+                                    
+                                    readonly property bool isSelected: root.format === modelData.val
+                                    readonly property bool isFirst: index === 0
+                                    readonly property bool isLast: index === 2
+                                    readonly property bool hovered: btnMouseArea.containsMouse
+                                    
+                                    Shape {
+                                        id: btnBg
+                                        anchors.fill: parent
+                                        anchors.margins: 0.5
+
+                                        property real innerRadius: 4
+                                        property real outerRadius: 8
+                                        property real pillRadius: height / 2
+                                        
+                                        property real tlr: isSelected ? pillRadius : (isFirst ? outerRadius : innerRadius)
+                                        property real trr: isSelected ? pillRadius : (isLast ? outerRadius : innerRadius)
+                                        property real blr: isSelected ? pillRadius : (isFirst ? outerRadius : innerRadius)
+                                        property real brr: isSelected ? pillRadius : (isLast ? outerRadius : innerRadius)
+
+                                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+
+                                        readonly property color colorActive: Theme.withAlpha(Theme.primary, 0.18)
+                                        readonly property color colorHovered: Theme.withAlpha(Theme.primary, 0.1)
+                                        readonly property color colorInactive: Theme.withAlpha(Theme.secondary, 0.04)
+                                        
+                                        readonly property color borderActive: Theme.withAlpha(Theme.primary, 0.6)
+                                        readonly property color borderHovered: Theme.withAlpha(Theme.primary, 0.4)
+                                        readonly property color borderInactive: Theme.withAlpha(Theme.secondary, 0.15)
+
+                                        property color paintColor: isSelected ? colorActive : (hovered ? colorHovered : colorInactive)
+                                        
+                                        property color paintBorder: isSelected ? borderActive : (hovered ? borderHovered : borderInactive)
+
+                                        ShapePath {
+                                            fillColor: btnBg.paintColor
+                                            strokeColor: btnBg.paintBorder
+                                            strokeWidth: 1
+
+                                            startX: btnBg.tlrAnim
+                                            startY: 0
+
+                                            PathLine { x: btnBg.width - btnBg.trrAnim; y: 0 }
+                                            PathArc { x: btnBg.width; y: btnBg.trrAnim; radiusX: btnBg.trrAnim; radiusY: btnBg.trrAnim; direction: PathArc.Clockwise }
+                                            
+                                            PathLine { x: btnBg.width; y: btnBg.height - btnBg.brrAnim }
+                                            PathArc { x: btnBg.width - btnBg.brrAnim; y: btnBg.height; radiusX: btnBg.brrAnim; radiusY: btnBg.brrAnim; direction: PathArc.Clockwise }
+                                            
+                                            PathLine { x: btnBg.blrAnim; y: btnBg.height }
+                                            PathArc { x: 0; y: btnBg.height - btnBg.blrAnim; radiusX: btnBg.blrAnim; radiusY: btnBg.blrAnim; direction: PathArc.Clockwise }
+                                            
+                                            PathLine { x: 0; y: btnBg.tlrAnim }
+                                            PathArc { x: btnBg.tlrAnim; y: 0; radiusX: btnBg.tlrAnim; radiusY: btnBg.tlrAnim; direction: PathArc.Clockwise }
+                                        }
+                                    }
+                                    StyledText {
+                                        anchors.centerIn: parent
+                                        text: modelData.label
+                                        font.pixelSize: Theme.fontSizeSmall
+                                        font.weight: isSelected ? Font.Bold : Font.Normal
+                                        color: isSelected ? Theme.primary : Theme.surfaceText
+                                        Behavior on color { ColorAnimation { duration: 150 } }
+                                    }
+                                    DankRipple { id: btnRipple; anchors.fill: parent; cornerRadius: btnBg.tlrAnim; rippleColor: Theme.primary }
+                                    MouseArea {
+                                        id: btnMouseArea
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        onPressed: mouse => btnRipple.trigger(mouse.x, mouse.y)
+                                        onClicked: {
+                                            root.format = modelData.val;
+                                            root.saveSetting("format", modelData.val);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -392,21 +454,96 @@ Column {
                             DankIcon { name: modelData.i; color: Theme.surfaceVariantText; size: 18 }
                             StyledText { text: modelData.t; color: Theme.surfaceText; font.pixelSize: Theme.fontSizeSmall; Layout.fillWidth: true }
                         }
-                        DankButtonGroup {
-                            Layout.fillWidth: true; buttonHeight: 30; minButtonWidth: 54
-                            scale: 0.85
-                            model: ["Off", "3s", "5s", "10s"]
-                            currentIndex: {
-                                if (root.delaySeconds === 3) return 1;
-                                if (root.delaySeconds === 5) return 2;
-                                if (root.delaySeconds === 10) return 3;
-                                return 0;
-                            }
-                            onSelectionChanged: function(index, selected) {
-                                if (selected) {
-                                    var vals = [0, 3, 5, 10];
-                                    root.delaySeconds = vals[index];
-                                    root.saveSetting("delaySeconds", String(vals[index]));
+                        RowLayout {
+                            Layout.fillWidth: true; height: 30
+                            scale: 0.85; transformOrigin: Item.Left
+                            spacing: 4
+                            Repeater {
+                                model: [
+                                    { label: "Off", val: 0 },
+                                    { label: "3s", val: 3 },
+                                    { label: "5s", val: 5 },
+                                    { label: "10s", val: 10 }
+                                ]
+                                delegate: Item {
+                                    Layout.fillWidth: true; Layout.fillHeight: true
+                                    
+                                    readonly property bool isSelected: root.delaySeconds === modelData.val
+                                    readonly property bool isFirst: index === 0
+                                    readonly property bool isLast: index === 3
+                                    readonly property bool hovered: btnMouseArea.containsMouse
+                                    
+                                    Shape {
+                                        id: btnBg
+                                        anchors.fill: parent
+                                        anchors.margins: 0.5
+
+                                        property real innerRadius: 4
+                                        property real outerRadius: 8
+                                        property real pillRadius: height / 2
+                                        
+                                        property real tlr: isSelected ? pillRadius : (isFirst ? outerRadius : innerRadius)
+                                        property real trr: isSelected ? pillRadius : (isLast ? outerRadius : innerRadius)
+                                        property real blr: isSelected ? pillRadius : (isFirst ? outerRadius : innerRadius)
+                                        property real brr: isSelected ? pillRadius : (isLast ? outerRadius : innerRadius)
+
+                                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+
+                                        readonly property color colorActive: Theme.withAlpha(Theme.primary, 0.18)
+                                        readonly property color colorHovered: Theme.withAlpha(Theme.primary, 0.1)
+                                        readonly property color colorInactive: Theme.withAlpha(Theme.secondary, 0.04)
+                                        
+                                        readonly property color borderActive: Theme.withAlpha(Theme.primary, 0.6)
+                                        readonly property color borderHovered: Theme.withAlpha(Theme.primary, 0.4)
+                                        readonly property color borderInactive: Theme.withAlpha(Theme.secondary, 0.15)
+
+                                        property color paintColor: isSelected ? colorActive : (hovered ? colorHovered : colorInactive)
+                                        
+                                        property color paintBorder: isSelected ? borderActive : (hovered ? borderHovered : borderInactive)
+
+                                        ShapePath {
+                                            fillColor: btnBg.paintColor
+                                            strokeColor: btnBg.paintBorder
+                                            strokeWidth: 1
+
+                                            startX: btnBg.tlrAnim
+                                            startY: 0
+
+                                            PathLine { x: btnBg.width - btnBg.trrAnim; y: 0 }
+                                            PathArc { x: btnBg.width; y: btnBg.trrAnim; radiusX: btnBg.trrAnim; radiusY: btnBg.trrAnim; direction: PathArc.Clockwise }
+                                            
+                                            PathLine { x: btnBg.width; y: btnBg.height - btnBg.brrAnim }
+                                            PathArc { x: btnBg.width - btnBg.brrAnim; y: btnBg.height; radiusX: btnBg.brrAnim; radiusY: btnBg.brrAnim; direction: PathArc.Clockwise }
+                                            
+                                            PathLine { x: btnBg.blrAnim; y: btnBg.height }
+                                            PathArc { x: 0; y: btnBg.height - btnBg.blrAnim; radiusX: btnBg.blrAnim; radiusY: btnBg.blrAnim; direction: PathArc.Clockwise }
+                                            
+                                            PathLine { x: 0; y: btnBg.tlrAnim }
+                                            PathArc { x: btnBg.tlrAnim; y: 0; radiusX: btnBg.tlrAnim; radiusY: btnBg.tlrAnim; direction: PathArc.Clockwise }
+                                        }
+                                    }
+                                    StyledText {
+                                        anchors.centerIn: parent
+                                        text: modelData.label
+                                        font.pixelSize: Theme.fontSizeSmall
+                                        font.weight: isSelected ? Font.Bold : Font.Normal
+                                        color: isSelected ? Theme.primary : Theme.surfaceText
+                                        Behavior on color { ColorAnimation { duration: 150 } }
+                                    }
+                                    DankRipple { id: btnRipple; anchors.fill: parent; cornerRadius: btnBg.tlrAnim; rippleColor: Theme.primary }
+                                    MouseArea {
+                                        id: btnMouseArea
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        onPressed: mouse => btnRipple.trigger(mouse.x, mouse.y)
+                                        onClicked: {
+                                            root.delaySeconds = modelData.val;
+                                            root.saveSetting("delaySeconds", String(modelData.val));
+                                        }
+                                    }
                                 }
                             }
                         }

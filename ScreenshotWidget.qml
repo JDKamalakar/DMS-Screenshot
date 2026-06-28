@@ -201,7 +201,7 @@ PluginComponent {
                 sourceComponent: ccDetailInternal
                 
                 opacity: status === Loader.Ready ? 1 : 0
-                Behavior on opacity { NumberAnimation { duration: 20 } }
+                Behavior on opacity { NumberAnimation { duration: 150 } }
             }
         }
     }
@@ -216,7 +216,7 @@ PluginComponent {
 
             // --- Capture Header Card ---
             StyledRect {
-                width: parent.width - 32; anchors.horizontalCenter: parent.horizontalCenter; height: 72
+                width: Math.max(0, parent.width - 32); anchors.horizontalCenter: parent.horizontalCenter; height: 72
                 radius: Theme.cornerRadius
                 color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
                 border.width: 1
@@ -331,7 +331,7 @@ PluginComponent {
             // --- Settings Form ---
             ScreenshotSettingsForm {
                 id: settingsColumnCC
-                width: parent.width - 32; anchors.horizontalCenter: parent.horizontalCenter
+                width: Math.max(0, parent.width - 32); anchors.horizontalCenter: parent.horizontalCenter
 
                 pluginService: typeof PluginService !== "undefined" ? PluginService : null
                 pluginId: "dmsScreenshot"
@@ -389,11 +389,11 @@ PluginComponent {
 
             Loader {
                 width: parent.width
-                asynchronous: false
+                asynchronous: true
                 sourceComponent: popoutInternal
                 
                 opacity: status === Loader.Ready ? 1 : 0
-                Behavior on opacity { NumberAnimation { duration: 100 } }
+                Behavior on opacity { NumberAnimation { duration: 150 } }
             }
         }
     }
@@ -443,8 +443,8 @@ PluginComponent {
                                         }
                                         PropertyAction { target: modeTxtPop; property: "y"; value: -5 }
                                         ParallelAnimation {
-                                            NumberAnimation { target: modeTxtPop; property: "opacity"; to: 0.85; duration: 200; easing.type: Easing.InQuad }
-                                            NumberAnimation { target: modeTxtPop; property: "y"; to: 0; duration: 200; easing.type: Easing.InQuad }
+                                            NumberAnimation { target: modeTxtPop; property: "opacity"; to: 0.85; duration: 150; easing.type: Easing.InQuad }
+                                            NumberAnimation { target: modeTxtPop; property: "y"; to: 0; duration: 150; easing.type: Easing.InQuad }
                                         }
                                     }
                                 }
