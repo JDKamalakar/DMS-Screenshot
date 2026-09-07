@@ -16,10 +16,19 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            github.rest.issues.addAssignees({
+            const isPR = !!context.payload.pull_request;
+            const author = context.payload.sender ? context.payload.sender.login : '';
+            const targetUser = 'JDKamalakar';
+
+            // Skip assignment if the PR was created by the target user
+            if (isPR && author === targetUser) {
+              core.info(`Skipping auto-assignment because PR was created by ${author}`);
+              return;
+            }
+
+            await github.rest.issues.addAssignees({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              assignees: ['JDKamalakar']
-            })
-            
+              assignees: [targetUser]
+            });
