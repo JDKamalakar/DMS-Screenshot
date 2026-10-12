@@ -24,14 +24,18 @@ Integrated screenshot utility for Dank Material Shell – capture your workflow 
 
 <div align="left">
 
-* **Area Selection**: Capture specific parts of your screen with a simple drag-and-drop.
-* **Full Desktop**: Snap your entire workspace across all monitors instantly.
-* **Smart Snapping**: Quickly capture specific application windows with precision.
+* **Area & Region Selection**: Capture specific parts of your screen interactively with drag-and-drop.
+* **Focused Window**: Snap the active application window cleanly (Hyprland, Mango, niri).
+* **Scrolling Capture**: Continuously stitch tall webpage and document screenshots as you scroll (`dms screenshot scroll`).
+* **Display Output Targeting**: Capture a dedicated monitor output by name (`-o <NAME>`).
+* **Repeat Last Region**: Instantly recapture the previously selected area without re-drawing.
+* **Full Desktop**: Snap your focused display or entire multi-monitor setup instantly.
+* **Scroll Interval Control**: Customize capture cadence (30–1000 ms) for smooth stitched scrolling captures.
 * **Material Aesthetics**: Smooth animations and transitions that feel native to DMS.
-* **Integrated Workflow**: Automatically save to disk, copy to clipboard, or pipe to an editor.
+* **Integrated Workflow**: Automatically save to disk, copy to clipboard, or pipe directly to an external editor (e.g., `swappy`).
 * **Filename Templates**: Insert date and time tokens like `%Y`, `%m`, `%d`, `%H`, `%M`, `%S` directly into custom paths and filenames.
-* **Capture Delay**: Optional countdown of 3, 5, or 10 seconds before the shutter fires for non-interactive modes.
-* **Deep Settings**: Full control over output format, quality, and notification behavior.
+* **Capture Delay**: Optional countdown of 3, 5, or 10 seconds before the shutter fires.
+* **Deep Settings**: Full control over output format (PNG, JPG, PPM), JPEG quality, and notification behavior.
 
 </div>
 
@@ -52,7 +56,7 @@ Integrated screenshot utility for Dank Material Shell – capture your workflow 
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
-Before reporting a new issue, take a look at the [FAQ](https://github.com/JDKamalakar/DMS-Screenshot/wiki), the [changelog](https://github.com/JDKamalakar/DMS-Screenshot/releases) and the already opened [issues](https://github.com/JDKamalakar/DMS-Screenshot/issues).
+Before reporting a new issue, take a look at the [FAQ](https://github.com/JDKamalakar/DMS-Screenshot/wiki), the [changelog](CHANGELOG.md) and the already opened [issues](https://github.com/JDKamalakar/DMS-Screenshot/issues).
 
 
 ### Credits

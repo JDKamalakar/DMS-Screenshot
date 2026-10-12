@@ -18,7 +18,7 @@ PluginComponent {
     property bool saveToDisk: pluginData.saveToDisk !== undefined ? pluginData.saveToDisk : true
     property string customPath: pluginData.customPath || ""
     
-    // New DMS Settings
+    // DMS Screenshot Settings
     property string format: pluginData.format || "png"
     property int quality: pluginData.quality !== undefined ? pluginData.quality : 90
     property bool copyToClipboard: pluginData.copyToClipboard !== undefined ? pluginData.copyToClipboard : true
@@ -28,6 +28,8 @@ PluginComponent {
     property string pipeCommand: pluginData.pipeCommand || ""
     property string filename: pluginData.filename || ""
     property int delaySeconds: pluginData.delaySeconds !== undefined ? pluginData.delaySeconds : 0
+    property int scrollInterval: pluginData.scrollInterval !== undefined ? pluginData.scrollInterval : 45
+    property string outputName: pluginData.outputName || ""
 
     // -- Internal ----------------------------------------------------------------------
     property bool isTakingScreenshot: false
@@ -64,6 +66,10 @@ PluginComponent {
         if (root.mode === "interactive") return "Interactive Mode"
         if (root.mode === "full") return "Focused Screen"
         if (root.mode === "all") return "All Screens"
+        if (root.mode === "window") return "Focused Window"
+        if (root.mode === "scroll") return "Scrolling Capture"
+        if (root.mode === "last") return "Repeat Last Region"
+        if (root.mode === "output") return root.outputName ? ("Output (" + root.outputName + ")") : "Specific Output"
         return "Screenshot"
     }
 
@@ -128,40 +134,58 @@ PluginComponent {
             root.pipeCommand = PluginService.loadPluginData("dmsScreenshot", "pipeCommand", "") || "";
             root.filename = PluginService.loadPluginData("dmsScreenshot", "filename", "") || "";
             root.delaySeconds = parseInt(PluginService.loadPluginData("dmsScreenshot", "delaySeconds", 0)) || 0;
+            root.scrollInterval = parseInt(PluginService.loadPluginData("dmsScreenshot", "scrollInterval", 45)) || 45;
+            root.outputName = PluginService.loadPluginData("dmsScreenshot", "outputName", "") || "";
         }
 
-        let dmsStr = "";
-        let execCmd;
-        if (root.mode === "interactive") {
-            dmsStr = "dms screenshot";
-        } else {
-            dmsStr = "dms screenshot " + root.mode;
+        let argv = ["dms", "screenshot"];
+        if (root.mode !== "interactive") {
+            argv.push(root.mode);
         }
 
-        if (root.showPointer) dmsStr += " --cursor on";
-        if (!root.saveToDisk) dmsStr += " --no-file";
-        if (!root.copyToClipboard) dmsStr += " --no-clipboard";
-        if (!root.showNotify) dmsStr += " --no-notify";
-        if (root.stdout) dmsStr += " --stdout";
-        if (root.filename) dmsStr += " --filename \"" + root._expandFilenameTemplate(root.filename) + "\"";
+        if (root.mode === "output" && root.outputName.trim() !== "") {
+            argv.push("-o", root.outputName.trim());
+        }
 
-        dmsStr += " -f " + root.format;
-        if (root.format === "jpg") dmsStr += " -q " + root.quality;
+        if (root.mode === "scroll" && root.scrollInterval && root.scrollInterval !== 45) {
+            argv.push("--interval", String(root.scrollInterval));
+        }
+
+        if (root.showPointer) {
+            argv.push("--cursor", "on");
+        }
+        if (!root.saveToDisk) argv.push("--no-file");
+        if (!root.copyToClipboard) argv.push("--no-clipboard");
+        if (!root.showNotify) argv.push("--no-notify");
+        if (root.stdout) argv.push("--stdout");
+        if (root.filename) {
+            argv.push("--filename", root._expandFilenameTemplate(root.filename));
+        }
+
+        argv.push("-f", root.format);
+        if (root.format === "jpg") {
+            argv.push("-q", String(root.quality));
+        }
 
         if (root.saveToDisk && root.customPath) {
             const expandedPath = root._expandFilenameTemplate(root.customPath);
             if (!expandedPath.match(/\.(png|jpe?g|ppm)$/i)) {
-                dmsStr += " --dir \"" + expandedPath + "\"";
+                argv.push("--dir", expandedPath);
             } else {
-                dmsStr += " --filename \"" + expandedPath + "\"";
+                argv.push("--filename", expandedPath);
             }
         }
 
+        let execCmd;
         if (root.stdout && root.pipeCommand) {
-            dmsStr += " | " + root.pipeCommand;
+            const escapeSh = function(arg) {
+                return "'" + String(arg).replace(/'/g, "'\\''") + "'";
+            };
+            const dmsShCmd = argv.map(escapeSh).join(" ");
+            execCmd = ["bash", "-c", "sleep 0.3; " + dmsShCmd + " | " + root.pipeCommand];
+        } else {
+            execCmd = argv;
         }
-
-        execCmd = ["bash", "-c", "sleep 0.3; " + dmsStr];
 
         root._pendingExecCmd = execCmd;
 
@@ -188,14 +212,16 @@ PluginComponent {
 
     // -- CC Detail Settings -------------------------------------------------------------
     ccDetailContent: Component {
-        ScrollView {
+        DankFlickable {
+            id: ccFlickable
             width: parent.width
             height: parent.height
-            clip: false
-            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-            ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+            clip: true
+            contentWidth: width
+            contentHeight: ccLoader.item ? ccLoader.item.implicitHeight : 0
 
             Loader {
+                id: ccLoader
                 width: parent.width
                 asynchronous: true
                 sourceComponent: ccDetailInternal
@@ -211,21 +237,21 @@ PluginComponent {
         Column {
             id: ccDetailCol
             width: parent.width
-            padding: 16
+            padding: Theme.spacingL
             spacing: Theme.spacingM
 
             // --- Capture Header Card ---
             StyledRect {
-                width: Math.max(0, parent.width - 32); anchors.horizontalCenter: parent.horizontalCenter; height: 72
+                width: Math.max(0, parent.width - Theme.spacingL * 2); anchors.horizontalCenter: parent.horizontalCenter; height: 72
                 radius: Theme.cornerRadius
                 color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
                 border.width: 1
-                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                border.color: Theme.withAlpha(Theme.primary, 0.15)
                 RowLayout {
                     anchors.fill: parent; anchors.margins: Theme.spacingM; spacing: Theme.spacingM
                     Rectangle {
-                        width: 42; height: 42; radius: 21
-                        color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.2)
+                        width: 42; height: 42; radius: width / 2
+                        color: Theme.withAlpha(Theme.primary, 0.2)
                         DankIcon { name: "screenshot_region"; size: 24; color: Theme.surfaceText; anchors.centerIn: parent }
                     }
                     Column {
@@ -237,7 +263,7 @@ PluginComponent {
                                 id: modeTxtCC
                                 width: parent.width
                                 text: root._getModeText()
-                                font.pixelSize: Theme.fontSizeSmall - 1
+                                font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.primary
                                 opacity: 0.85
 
@@ -281,16 +307,16 @@ PluginComponent {
                         Rectangle {
                             anchors.fill: parent
                             radius: Theme.cornerRadius
-                            color: captureAreaCC.containsMouse ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15) : Qt.rgba(Theme.surfaceContainer.r, Theme.surfaceContainer.g, Theme.surfaceContainer.b, 0.4)
+                            color: captureAreaCC.containsMouse ? Theme.withAlpha(Theme.primary, 0.15) : Theme.withAlpha(Theme.surfaceContainer, 0.4)
                             border.width: 1
-                            border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, captureAreaCC.containsMouse ? 0.3 : 0.15)
+                            border.color: Theme.withAlpha(Theme.primary, captureAreaCC.containsMouse ? 0.3 : 0.15)
                             Behavior on color { ColorAnimation { duration: 150 } }
                             Behavior on border.color { ColorAnimation { duration: 150 } }
                         }
 
                         Row {
                             anchors.centerIn: parent
-                            spacing: 8
+                            spacing: Theme.spacingS
                             
                             DankIcon {
                                 id: captureBtnIconCC
@@ -331,7 +357,7 @@ PluginComponent {
             // --- Settings Form ---
             ScreenshotSettingsForm {
                 id: settingsColumnCC
-                width: Math.max(0, parent.width - 32); anchors.horizontalCenter: parent.horizontalCenter
+                width: Math.max(0, parent.width - Theme.spacingL * 2); anchors.horizontalCenter: parent.horizontalCenter
 
                 pluginService: typeof PluginService !== "undefined" ? PluginService : null
                 pluginId: "dmsScreenshot"
@@ -348,6 +374,8 @@ PluginComponent {
                 stdout: root.stdout
                 pipeCommand: root.pipeCommand
                 delaySeconds: root.delaySeconds
+                scrollInterval: root.scrollInterval
+                outputName: root.outputName
                 
                 onSaveSetting: function(key, value) {
                     if (key === "mode") root.mode = value;
@@ -362,6 +390,8 @@ PluginComponent {
                     if (key === "pipeCommand") root.pipeCommand = value;
                     if (key === "filename") root.filename = value;
                     if (key === "delaySeconds") root.delaySeconds = value;
+                    if (key === "scrollInterval") root.scrollInterval = value;
+                    if (key === "outputName") root.outputName = value;
 
                     try {
                         if (typeof PluginService !== "undefined" && PluginService)
@@ -413,12 +443,12 @@ PluginComponent {
                     radius: Theme.cornerRadius
                     color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
                     border.width: 1
-                    border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                    border.color: Theme.withAlpha(Theme.primary, 0.15)
                     RowLayout {
                         anchors.fill: parent; anchors.margins: Theme.spacingM; spacing: Theme.spacingM
                         Rectangle {
-                            width: 42; height: 42; radius: 21
-                            color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.2)
+                            width: 42; height: 42; radius: width / 2
+                            color: Theme.withAlpha(Theme.primary, 0.2)
                             DankIcon { name: "screenshot_region"; size: 24; color: Theme.surfaceText; anchors.centerIn: parent }
                         }
                         Column {
@@ -430,7 +460,7 @@ PluginComponent {
                                     id: modeTxtPop
                                     width: parent.width
                                     text: root._getModeText()
-                                    font.pixelSize: Theme.fontSizeSmall - 1
+                                    font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.primary
                                     opacity: 0.85
 
@@ -452,7 +482,7 @@ PluginComponent {
                         }
                         Item {
                             id: captureBtnPop
-                            height: 38; width: 105
+                            height: 38; width: 110
                             Layout.alignment: Qt.AlignVCenter
                             
                             scale: captureAreaPop.pressed ? 0.9 : (captureAreaPop.containsMouse ? 1.05 : 1.0)
@@ -473,16 +503,16 @@ PluginComponent {
                             Rectangle {
                                 anchors.fill: parent
                                 radius: Theme.cornerRadius
-                                color: captureAreaPop.containsMouse ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15) : Qt.rgba(Theme.surfaceContainer.r, Theme.surfaceContainer.g, Theme.surfaceContainer.b, 0.4)
+                                color: captureAreaPop.containsMouse ? Theme.withAlpha(Theme.primary, 0.15) : Theme.withAlpha(Theme.surfaceContainer, 0.4)
                                 border.width: 1
-                                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, captureAreaPop.containsMouse ? 0.3 : 0.15)
+                                border.color: Theme.withAlpha(Theme.primary, captureAreaPop.containsMouse ? 0.3 : 0.15)
                                 Behavior on color { ColorAnimation { duration: 150 } }
                                 Behavior on border.color { ColorAnimation { duration: 150 } }
                             }
 
                             Row {
                                 anchors.centerIn: parent
-                                spacing: 8
+                                spacing: Theme.spacingS
                                 
                                 DankIcon {
                                     id: captureBtnIconPop
@@ -539,6 +569,8 @@ PluginComponent {
                     stdout: root.stdout
                     pipeCommand: root.pipeCommand
                     delaySeconds: root.delaySeconds
+                    scrollInterval: root.scrollInterval
+                    outputName: root.outputName
                     
                     onSaveSetting: function(key, value) {
                         if (key === "mode") root.mode = value;
@@ -553,6 +585,8 @@ PluginComponent {
                         if (key === "pipeCommand") root.pipeCommand = value;
                         if (key === "filename") root.filename = value;
                         if (key === "delaySeconds") root.delaySeconds = value;
+                        if (key === "scrollInterval") root.scrollInterval = value;
+                        if (key === "outputName") root.outputName = value;
 
                         try {
                             if (typeof PluginService !== "undefined" && PluginService)

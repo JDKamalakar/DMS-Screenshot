@@ -27,6 +27,8 @@ Column {
     property bool stdout: false
     property string pipeCommand: ""
     property int delaySeconds: 0
+    property int scrollInterval: 45
+    property string outputName: ""
     property string output: "" // (deprecated)
     
     property bool _isReady: true
@@ -73,9 +75,12 @@ Column {
 
                 Repeater {
                     model: [
-                        { label: "Interactive",    val: "interactive", ic: "touch_app"     },
-                        { label: "Focused Screen", val: "full",        ic: "monitor"       },
-                        { label: "All Screens",    val: "all",         ic: "monitor_weight"}
+                        { label: "Interactive Region", val: "interactive", ic: "touch_app"       },
+                        { label: "Focused Window",     val: "window",      ic: "dock_to_left"    },
+                        { label: "Scrolling Capture",  val: "scroll",      ic: "swipe_vertical"  },
+                        { label: "Focused Screen",     val: "full",        ic: "monitor"         },
+                        { label: "All Screens",        val: "all",         ic: "monitor_weight"  },
+                        { label: "Specific Output",    val: "output",      ic: "desktop_windows" }
                     ]
 
                     delegate: Item {
@@ -84,7 +89,7 @@ Column {
                     height: 44
                     readonly property bool isSelected: root.mode === modelData.val
                     readonly property bool hovered: modeMouseArea.containsMouse
-                    readonly property int  totalCount: 3   // fixed 3 items
+                    readonly property int  totalCount: 6   // total mode items
 
                     // Dynamic background with Shape for selective corner rounding
                     Shape {
@@ -92,15 +97,16 @@ Column {
                         anchors.fill: parent
                         anchors.margins: 0.5
 
-                        property real innerRadius: 6
-                        property real outerRadius: 12
+                        property real innerRadius: Theme.cornerRadius / 2
+                        property real outerRadius: Theme.cornerRadius
+                        property real pillRadius: height / 2
                         property bool isFirst: index === 0
                         property bool isLast:  index === modeDelegate.totalCount - 1
                         
-                        property real tlr: isSelected ? 21.5 : (isFirst ? outerRadius : innerRadius)
-                        property real trr: isSelected ? 21.5 : (isFirst ? outerRadius : innerRadius)
-                        property real blr: isSelected ? 21.5 : (isLast ? outerRadius : innerRadius)
-                        property real brr: isSelected ? 21.5 : (isLast ? outerRadius : innerRadius)
+                        property real tlr: isSelected ? pillRadius : (isFirst ? outerRadius : innerRadius)
+                        property real trr: isSelected ? pillRadius : (isFirst ? outerRadius : innerRadius)
+                        property real blr: isSelected ? pillRadius : (isLast ? outerRadius : innerRadius)
+                        property real brr: isSelected ? pillRadius : (isLast ? outerRadius : innerRadius)
 
                         property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
                         property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
@@ -141,7 +147,7 @@ Column {
                         }
 
                         Rectangle { 
-                            anchors.fill: parent; radius: parent.tlrAnim; color: "white"
+                            anchors.fill: parent; radius: parent.tlrAnim; color: Theme.surfaceText
                             anchors.margins: 0.5
                             opacity: hovered ? 0.05 : 0; Behavior on opacity { NumberAnimation { duration: 150 } } 
                         }
@@ -150,7 +156,7 @@ Column {
                     DankRipple { id: modeRipple; anchors.fill: parent; cornerRadius: modeBg.tlrAnim; rippleColor: Theme.primary }
 
                     RowLayout {
-                        anchors.fill: parent; anchors.leftMargin: 12; anchors.rightMargin: 12; spacing: Theme.spacingS
+                        anchors.fill: parent; anchors.leftMargin: Theme.spacingM; anchors.rightMargin: Theme.spacingM; spacing: Theme.spacingS
                         DankIcon { 
                             name: modelData.ic
                             color: isSelected ? Theme.primary : Theme.surfaceVariantText
@@ -220,83 +226,93 @@ Column {
             Column {
                 id: optionsList
                 width: parent.width
-                spacing: 4
-
-                readonly property var visibleKeys: {
-                    let base = ["copyToClipboard", "saveToDisk", "showPointer", "stdout", "delaySeconds"];
-                    base.push("format");
-                    if (root.format === "jpg") base.push("quality");
-                    base.push("customPath");
-                    return base;
-                }
-
-                function getGroup(key) {
-                    if (key === "copyToClipboard" || key === "saveToDisk" || key === "showPointer" || key === "stdout" || key === "delaySeconds") return 1;
-                    if (key === "format" || key === "quality") return 2;
-                    if (key === "customPath") return 3;
-                    return 0;
-                }
-
-                Repeater {
-                    model: [
-                        { t: "Copy to Clipboard", i: "content_copy",  k: "copyToClipboard", type: "toggle"      },
-                        { t: "Save to Disk",       i: "save",          k: "saveToDisk",      type: "toggle"      },
-                        { t: "Show Pointer",       i: "mouse",         k: "showPointer",     type: "toggle"      },
-                        { t: "Screenshot Editor",  i: "output",        k: "stdout",          type: "toggle"      },
-                        { t: "Capture Delay",      i: "schedule",      k: "delaySeconds",    type: "delay"       },
-                        { t: "Image Format",       i: "image",         k: "format",          type: "format"      },
-                        { t: "JPEG Quality",       i: "high_quality",  k: "quality",         type: "qualityField"},
-                        { t: "Custom Directory",   i: "folder",        k: "customPath",      type: "pathField"   }
-                    ]
-
-                    delegate: Item {
-                    id: optDelegate
-                    width: optionsList.width
-                    clip: true
-
-                    readonly property var  vk:      optionsList.visibleKeys
-                    readonly property int  vIdx:    vk.indexOf(modelData.k)
-                    readonly property int  myGroup: optionsList.getGroup(modelData.k)
-                    readonly property bool isVisible: vIdx !== -1
-                    readonly property bool isFirst: isVisible && (vIdx === 0 || optionsList.getGroup(vk[vIdx - 1]) !== myGroup)
-                    readonly property bool isLast:  isVisible && (vIdx === vk.length - 1 || optionsList.getGroup(vk[vIdx + 1]) !== myGroup)
-                    readonly property bool hovered: optMouseArea.containsMouse
-
-                    property real baseHeight: {
-                        if (modelData.type === "format")       return 72;
-                        if (modelData.type === "delay")        return 72;
-                        if (modelData.type === "qualityField") return root.format === "jpg" ? 72 : 0;
-                        if (modelData.type === "pathField")    return 72;
-                        return 44;
-                    }
-
-                    readonly property real groupMargin: (isLast && vIdx !== vk.length - 1 && baseHeight > 0) ? 8 : 0
-                    
-                    height: baseHeight + groupMargin
-                    Behavior on height { NumberAnimation { duration: 250; easing.type: Easing.OutExpo } }
-                    
-                    visible: height > 0 || baseHeight > 0
-                    opacity: baseHeight > 0 ? 1 : 0
-                    Behavior on opacity { NumberAnimation { duration: 150 } }
-
-                    Item {
-                        id: contentCard
-                        width: parent.width
-                        height: parent.height - parent.groupMargin
-                        clip: true
-
-                    Shape {
-                        id: optBg
-                        anchors.fill: parent
-                        anchors.margins: 0.5
-
-                        property real innerRadius: 6
-                        property real outerRadius: 12
-                        
-                        property real tlr: isFirst ? outerRadius : innerRadius
-                        property real trr: isFirst ? outerRadius : innerRadius
-                        property real blr: isLast ? outerRadius : innerRadius
-                        property real brr: isLast ? outerRadius : innerRadius
+                spacing: Theme.spacingXS
+ 
+                 readonly property var visibleKeys: {
+                     let base = ["copyToClipboard", "saveToDisk", "showPointer", "stdout"];
+                     if (root.stdout) base.push("pipeCommand");
+                     if (root.mode === "scroll") base.push("scrollInterval");
+                     if (root.mode === "output") base.push("outputName");
+                     base.push("delaySeconds");
+                     base.push("format");
+                     if (root.format === "jpg") base.push("quality");
+                     base.push("customPath");
+                     return base;
+                 }
+ 
+                 function getGroup(key) {
+                     if (key === "copyToClipboard" || key === "saveToDisk" || key === "showPointer" || key === "stdout" || key === "pipeCommand" || key === "scrollInterval" || key === "outputName" || key === "delaySeconds") return 1;
+                     if (key === "format" || key === "quality") return 2;
+                     if (key === "customPath") return 3;
+                     return 0;
+                 }
+ 
+                 Repeater {
+                     model: [
+                         { t: "Copy to Clipboard",   i: "content_copy",    k: "copyToClipboard", type: "toggle"       },
+                         { t: "Save to Disk",         i: "save",            k: "saveToDisk",      type: "toggle"       },
+                         { t: "Show Pointer",         i: "mouse",           k: "showPointer",     type: "toggle"       },
+                         { t: "Screenshot Editor",    i: "output",          k: "stdout",          type: "toggle"       },
+                         { t: "Editor Pipe Command",  i: "terminal",        k: "pipeCommand",     type: "pipeField"    },
+                         { t: "Scroll Interval (ms)", i: "swipe_vertical",  k: "scrollInterval",  type: "scrollInterval"},
+                         { t: "Output Monitor Name",  i: "desktop_windows", k: "outputName",      type: "outputField"  },
+                         { t: "Capture Delay",        i: "schedule",        k: "delaySeconds",    type: "delay"        },
+                         { t: "Image Format",         i: "image",           k: "format",          type: "format"       },
+                         { t: "JPEG Quality",         i: "high_quality",    k: "quality",         type: "qualityField" },
+                         { t: "Custom Directory",     i: "folder",          k: "customPath",      type: "pathField"    }
+                     ]
+ 
+                     delegate: Item {
+                     id: optDelegate
+                     width: optionsList.width
+                     clip: true
+ 
+                     readonly property var  vk:      optionsList.visibleKeys
+                     readonly property int  vIdx:    vk.indexOf(modelData.k)
+                     readonly property int  myGroup: optionsList.getGroup(modelData.k)
+                     readonly property bool isVisible: vIdx !== -1
+                     readonly property bool isFirst: isVisible && (vIdx === 0 || optionsList.getGroup(vk[vIdx - 1]) !== myGroup)
+                     readonly property bool isLast:  isVisible && (vIdx === vk.length - 1 || optionsList.getGroup(vk[vIdx + 1]) !== myGroup)
+                     readonly property bool hovered: optMouseArea.containsMouse
+ 
+                     property real baseHeight: {
+                         if (modelData.type === "format")         return 72;
+                         if (modelData.type === "delay")          return 72;
+                         if (modelData.type === "scrollInterval") return root.mode === "scroll" ? 72 : 0;
+                         if (modelData.type === "outputField")    return root.mode === "output" ? 72 : 0;
+                         if (modelData.type === "qualityField")   return root.format === "jpg" ? 72 : 0;
+                         if (modelData.type === "pipeField")      return root.stdout ? 72 : 0;
+                         if (modelData.type === "pathField")      return 72;
+                         return 44;
+                     }
+ 
+                     readonly property real groupMargin: (isLast && vIdx !== vk.length - 1 && baseHeight > 0) ? Theme.spacingS : 0
+                     
+                     height: baseHeight + groupMargin
+                     Behavior on height { NumberAnimation { duration: 250; easing.type: Easing.OutExpo } }
+                     
+                     visible: height > 0 || baseHeight > 0
+                     opacity: baseHeight > 0 ? 1 : 0
+                     Behavior on opacity { NumberAnimation { duration: 150 } }
+ 
+                     Item {
+                         id: contentCard
+                         width: parent.width
+                         height: parent.height - parent.groupMargin
+                         clip: true
+ 
+                     Shape {
+                         id: optBg
+                         anchors.fill: parent
+                         anchors.margins: 0.5
+ 
+                         property real innerRadius: Theme.cornerRadius / 2
+                         property real outerRadius: Theme.cornerRadius
+                         
+                         property real tlr: isFirst ? outerRadius : innerRadius
+                         property real trr: isFirst ? outerRadius : innerRadius
+                         property real blr: isLast ? outerRadius : innerRadius
+                         property real brr: isLast ? outerRadius : innerRadius
 
                         property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
                         property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
@@ -331,7 +347,7 @@ Column {
                     DankRipple { id: optRipple; anchors.fill: parent; cornerRadius: optBg.tlrAnim; rippleColor: Theme.primary; visible: modelData.type === "toggle" }
 
                     RowLayout {
-                        anchors.fill: parent; anchors.leftMargin: 12; anchors.rightMargin: 12; spacing: Theme.spacingS
+                        anchors.fill: parent; anchors.leftMargin: Theme.spacingM; anchors.rightMargin: Theme.spacingM; spacing: Theme.spacingS
                         visible: modelData.type === "toggle"
                         DankIcon { name: modelData.i; color: Theme.surfaceVariantText; size: 18 }
                         StyledText { text: modelData.t; color: Theme.surfaceText; font.pixelSize: Theme.fontSizeSmall; Layout.fillWidth: true }
@@ -344,7 +360,7 @@ Column {
 
                     ColumnLayout {
                         anchors.left: parent.left; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
-                        anchors.leftMargin: 12; anchors.rightMargin: 12; spacing: 4
+                        anchors.leftMargin: Theme.spacingM; anchors.rightMargin: Theme.spacingM; spacing: Theme.spacingXS
                         visible: modelData.type === "format"
                         RowLayout {
                             Layout.fillWidth: true; spacing: Theme.spacingS
@@ -354,7 +370,7 @@ Column {
                         RowLayout {
                             Layout.fillWidth: true; height: 30
                             scale: 0.85; transformOrigin: Item.Left
-                            spacing: 4
+                            spacing: Theme.spacingXS
                             Repeater {
                                 model: [
                                     { label: "PNG", val: "png" },
@@ -374,8 +390,8 @@ Column {
                                         anchors.fill: parent
                                         anchors.margins: 0.5
 
-                                        property real innerRadius: 4
-                                        property real outerRadius: 8
+                                        property real innerRadius: Theme.cornerRadius / 3
+                                        property real outerRadius: Theme.cornerRadius * 2 / 3
                                         property real pillRadius: height / 2
                                         
                                         property real tlr: isSelected ? pillRadius : (isFirst ? outerRadius : innerRadius)
@@ -436,8 +452,8 @@ Column {
                                         hoverEnabled: true
                                         onPressed: mouse => btnRipple.trigger(mouse.x, mouse.y)
                                         onClicked: {
-                                            root.format = modelData.val;
-                                            root.saveSetting("format", modelData.val);
+                                             root.format = modelData.val;
+                                             root.saveSetting("format", modelData.val);
                                         }
                                     }
                                 }
@@ -447,7 +463,7 @@ Column {
 
                     ColumnLayout {
                         anchors.left: parent.left; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
-                        anchors.leftMargin: 12; anchors.rightMargin: 12; spacing: 4
+                        anchors.leftMargin: Theme.spacingM; anchors.rightMargin: Theme.spacingM; spacing: Theme.spacingXS
                         visible: modelData.type === "delay"
                         RowLayout {
                             Layout.fillWidth: true; spacing: Theme.spacingS
@@ -457,7 +473,7 @@ Column {
                         RowLayout {
                             Layout.fillWidth: true; height: 30
                             scale: 0.85; transformOrigin: Item.Left
-                            spacing: 4
+                            spacing: Theme.spacingXS
                             Repeater {
                                 model: [
                                     { label: "Off", val: 0 },
@@ -478,8 +494,8 @@ Column {
                                         anchors.fill: parent
                                         anchors.margins: 0.5
 
-                                        property real innerRadius: 4
-                                        property real outerRadius: 8
+                                        property real innerRadius: Theme.cornerRadius / 3
+                                        property real outerRadius: Theme.cornerRadius * 2 / 3
                                         property real pillRadius: height / 2
                                         
                                         property real tlr: isSelected ? pillRadius : (isFirst ? outerRadius : innerRadius)
@@ -551,8 +567,8 @@ Column {
 
                     ColumnLayout {
                         anchors.left: parent.left; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
-                        anchors.leftMargin: 12; anchors.rightMargin: 12; spacing: 4
-                        visible: modelData.type === "pathField" || modelData.type === "qualityField"
+                        anchors.leftMargin: Theme.spacingM; anchors.rightMargin: Theme.spacingM; spacing: Theme.spacingXS
+                        visible: modelData.type === "pathField" || modelData.type === "qualityField" || modelData.type === "pipeField" || modelData.type === "scrollInterval" || modelData.type === "outputField"
                         RowLayout {
                             Layout.fillWidth: true; spacing: Theme.spacingS
                             DankIcon { name: modelData.i; color: Theme.surfaceVariantText; size: 18 }
@@ -560,13 +576,36 @@ Column {
                         }
                         DankTextField {
                             Layout.fillWidth: true; height: 28
-                            font.pixelSize: Theme.fontSizeSmall - 2
-                            text: modelData.k === "quality" ? root.quality.toString() : root.customPath
-                            placeholderText: modelData.k === "quality" ? "90" : root.defaultPath
+                            font.pixelSize: Theme.fontSizeSmall
+                            text: {
+                                if (modelData.k === "quality") return root.quality.toString();
+                                if (modelData.k === "pipeCommand") return root.pipeCommand;
+                                if (modelData.k === "scrollInterval") return root.scrollInterval.toString();
+                                if (modelData.k === "outputName") return root.outputName;
+                                return root.customPath;
+                            }
+                            placeholderText: {
+                                if (modelData.k === "quality") return "90";
+                                if (modelData.k === "pipeCommand") return "swappy -f -";
+                                if (modelData.k === "scrollInterval") return "45 (30-1000)";
+                                if (modelData.k === "outputName") return "e.g. DP-1, HDMI-A-1";
+                                return root.defaultPath;
+                            }
                             onEditingFinished: {
                                 if (modelData.k === "quality") {
                                     var v = parseInt(text);
                                     if (!isNaN(v)) { root.quality = v; root.saveSetting("quality", v); }
+                                } else if (modelData.k === "pipeCommand") {
+                                    root.pipeCommand = text; root.saveSetting("pipeCommand", text);
+                                } else if (modelData.k === "scrollInterval") {
+                                    var iv = parseInt(text);
+                                    if (!isNaN(iv)) {
+                                        iv = Math.max(30, Math.min(1000, iv));
+                                        root.scrollInterval = iv;
+                                        root.saveSetting("scrollInterval", iv);
+                                    }
+                                } else if (modelData.k === "outputName") {
+                                    root.outputName = text; root.saveSetting("outputName", text);
                                 } else {
                                     root.customPath = text; root.saveSetting("customPath", text);
                                 }
