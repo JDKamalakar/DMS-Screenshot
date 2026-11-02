@@ -49,11 +49,64 @@ PluginComponent {
         }
     }
 
+    // Reference to the active popout instance (injected via PopoutComponent.parentPopout)
+    property var activePopoutRef: null
+    property int _pollCloseCount: 0
+
     Timer {
         id: pendingCaptureTimer
         interval: 0
         repeat: false
         onTriggered: root._fireCapture()
+    }
+
+    Timer {
+        id: closePollerTimer
+        interval: 50
+        repeat: true
+        onTriggered: {
+            root._pollCloseCount++;
+            if (!root._isAnyUIPresented() || root._pollCloseCount > 25) {
+                closePollerTimer.stop();
+                root._scheduleOrFireCapture();
+            }
+        }
+    }
+
+    function _isAnyUIPresented() {
+        try {
+            // Check widget popout
+            if (root.activePopoutRef) {
+                if (root.activePopoutRef.shouldBeVisible || root.activePopoutRef.isClosing) return true;
+                if (root.activePopoutRef.contentWindow && root.activePopoutRef.contentWindow.visible) return true;
+            }
+            // Check Control Center popout
+            if (typeof PopoutService !== "undefined" && PopoutService) {
+                const cc = PopoutService.controlCenterPopout;
+                if (cc) {
+                    if (cc.shouldBeVisible || cc.isClosing) return true;
+                    if (cc.contentWindow && cc.contentWindow.visible) return true;
+                }
+                const loader = PopoutService.controlCenterLoader;
+                if (loader && loader.item) {
+                    if (loader.item.shouldBeVisible || loader.item.isClosing) return true;
+                    if (loader.item.contentWindow && loader.item.contentWindow.visible) return true;
+                }
+                if (PopoutService.islandControlCenterOpen) return true;
+            }
+        } catch (e) {
+            console.error("ScreenshotWidget: error checking UI visibility:", e);
+        }
+        return false;
+    }
+
+    function _scheduleOrFireCapture() {
+        const userDelay = (root.delaySeconds > 0) ? (root.delaySeconds * 1000) : 0;
+        // Even after window visibility becomes false, add a safety buffer (60ms) for compositor surface unmapping
+        const buffer = 60;
+        const finalDelay = Math.max(userDelay, buffer);
+        pendingCaptureTimer.interval = finalDelay;
+        pendingCaptureTimer.start();
     }
 
     ccWidgetIcon: "screenshot_region"
@@ -110,10 +163,10 @@ PluginComponent {
     }
 
     onCcWidgetToggled: {
-        takeScreenshot();
         if (typeof PopoutService !== "undefined" && PopoutService) {
             PopoutService.closeControlCenter();
         }
+        takeScreenshot();
     }
 
     function takeScreenshot() {
@@ -189,12 +242,12 @@ PluginComponent {
 
         root._pendingExecCmd = execCmd;
 
-        const useDelay = root.delaySeconds > 0;
-        if (useDelay) {
-            pendingCaptureTimer.interval = root.delaySeconds * 1000;
-            pendingCaptureTimer.start();
+        // If UI (popup or Control Center) is currently presented/closing, poll until it has completely vanished
+        if (root._isAnyUIPresented()) {
+            root._pollCloseCount = 0;
+            closePollerTimer.start();
         } else {
-            root._fireCapture();
+            root._scheduleOrFireCapture();
         }
     }
 
@@ -298,9 +351,9 @@ PluginComponent {
                             cursorShape: Qt.PointingHandCursor
                             onPressed: mouse => captureRippleCC.trigger(mouse.x, mouse.y)
                             onClicked: {
-                                root.takeScreenshot();
                                 if (typeof PopoutService !== "undefined" && PopoutService)
                                     PopoutService.closeControlCenter();
+                                root.takeScreenshot();
                             }
                         }
 
@@ -416,6 +469,17 @@ PluginComponent {
             headerText: ""
             detailsText: ""
             showCloseButton: false
+
+            onParentPopoutChanged: {
+                if (parentPopout) {
+                    root.activePopoutRef = parentPopout;
+                }
+            }
+            Component.onCompleted: {
+                if (parentPopout) {
+                    root.activePopoutRef = parentPopout;
+                }
+            }
 
             Loader {
                 width: parent.width
