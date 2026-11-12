@@ -6,6 +6,7 @@ import Quickshell.Io
 import qs.Common
 import qs.Widgets
 import qs.Modules.Plugins
+import qs.Modules.Settings.Widgets
 import qs.Services
 import QtCore
 
@@ -643,6 +644,223 @@ PluginSettings {
                     settingKey: "showToast"
                     defaultValue: true
                     isLast: true
+                }
+            }
+        }
+
+        // ====================================================================
+        // SECTION 5: REQUIRED PACKAGES
+        // ====================================================================
+        Item {
+            id: depsWrapper
+            width: parent.width
+            implicitHeight: depsCol.implicitHeight
+
+            property bool expanded: false
+            property var depStatus: ({
+                "dms": true,
+                "wl-copy": true,
+                "swappy": true,
+                "satty": true,
+                "notify-send": true,
+                "grim": true,
+                "slurp": true,
+                "jq": true
+            })
+            property bool isChecking: true
+
+            Process {
+                id: depChecker
+                command: [
+                    "bash", "-c",
+                    "python3 -c \"import json, shutil, sys\n" +
+                    "cmds = [\n" +
+                    "  ('dms', 'dms'),\n" +
+                    "  ('wl-copy', 'wl-copy'),\n" +
+                    "  ('swappy', 'swappy'),\n" +
+                    "  ('satty', 'satty'),\n" +
+                    "  ('notify-send', 'notify-send'),\n" +
+                    "  ('grim', 'grim'),\n" +
+                    "  ('slurp', 'slurp'),\n" +
+                    "  ('jq', 'jq')\n" +
+                    "]\n" +
+                    "results = {k: bool(shutil.which(cmd)) for k, cmd in cmds}\n" +
+                    "sys.stdout.write(json.dumps(results))\n\""
+                ]
+                stdout: StdioCollector {
+                    onStreamFinished: {
+                        depsWrapper.isChecking = false;
+                        try {
+                            if (text && text.trim() !== "") {
+                                depsWrapper.depStatus = JSON.parse(text.trim());
+                            }
+                        } catch (e) {
+                            console.warn("Failed to parse dependency status:", e);
+                        }
+                    }
+                }
+            }
+
+            Component.onCompleted: {
+                depChecker.running = true;
+            }
+
+            Column {
+                id: depsCol
+                width: parent.width
+                spacing: 0
+
+                Item {
+                    id: depsHeaderRow
+                    width: parent.width
+                    height: 40
+
+                    Row {
+                        anchors.left: parent.left
+                        anchors.leftMargin: Theme.spacingM
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: Theme.spacingXS
+
+                        DankIcon {
+                            name: "extension"
+                            size: 16
+                            color: Theme.primary
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        StyledText {
+                            text: I18n.tr("Required packages")
+                            font.pixelSize: Theme.fontSizeSmall
+                            font.weight: Font.DemiBold
+                            color: Theme.primary
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+
+                    DankIcon {
+                        anchors.right: parent.right
+                        anchors.rightMargin: Theme.spacingM
+                        anchors.verticalCenter: parent.verticalCenter
+                        name: "expand_more"
+                        size: Theme.iconSize || 20
+                        color: Theme.surfaceVariantText
+                        rotation: depsWrapper.expanded ? 180 : 0
+
+                        Behavior on rotation {
+                            NumberAnimation {
+                                duration: 200
+                                easing.type: Easing.OutCubic
+                            }
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            depsWrapper.expanded = !depsWrapper.expanded;
+                            if (depsWrapper.expanded) {
+                                depsWrapper.isChecking = true;
+                                depChecker.running = true;
+                            }
+                        }
+                    }
+                }
+
+                Item {
+                    id: animHost
+                    width: parent.width
+                    clip: true
+                    height: depsWrapper.expanded ? groupContent.implicitHeight : 0
+                    opacity: depsWrapper.expanded ? 1.0 : 0.0
+                    visible: height > 0 || depsWrapper.expanded
+
+                    Behavior on height {
+                        NumberAnimation {
+                            duration: 250
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 200
+                            easing.type: Easing.OutQuad
+                        }
+                    }
+
+                    SettingsGroup {
+                        id: groupContent
+                        width: parent.width
+
+                        SettingsRow {
+                            visible: depsWrapper.isChecking
+                            iconName: "hourglass_top"
+                            title: I18n.tr("Checking packages...")
+                        }
+
+                        Repeater {
+                            model: [
+                                {
+                                    id: "dms",
+                                    pkg: "dms (Dux Modular Shell CLI)",
+                                    features: "Core screenshot backend, region selection HUD, scrolling capture & multi-output stitching",
+                                    present: Boolean(depsWrapper.depStatus["dms"])
+                                },
+                                {
+                                    id: "wl-copy",
+                                    pkg: "wl-clipboard (wl-copy)",
+                                    features: "Copying captured screenshots and file metadata directly to system clipboard",
+                                    present: Boolean(depsWrapper.depStatus["wl-copy"])
+                                },
+                                {
+                                    id: "swappy",
+                                    pkg: "swappy",
+                                    features: "Interactive screenshot annotation and editor (stdout pipeline)",
+                                    present: Boolean(depsWrapper.depStatus["swappy"])
+                                },
+                                {
+                                    id: "satty",
+                                    pkg: "satty",
+                                    features: "Alternative modern screenshot editor and markup tool",
+                                    present: Boolean(depsWrapper.depStatus["satty"])
+                                },
+                                {
+                                    id: "notify-send",
+                                    pkg: "libnotify (notify-send)",
+                                    features: "Desktop notifications for completed captures and file paths",
+                                    present: Boolean(depsWrapper.depStatus["notify-send"])
+                                },
+                                {
+                                    id: "grim",
+                                    pkg: "grim",
+                                    features: "Wayland image capture engine (underlying compositor capture fallback)",
+                                    present: Boolean(depsWrapper.depStatus["grim"])
+                                },
+                                {
+                                    id: "slurp",
+                                    pkg: "slurp",
+                                    features: "Wayland interactive region selection utility",
+                                    present: Boolean(depsWrapper.depStatus["slurp"])
+                                },
+                                {
+                                    id: "jq",
+                                    pkg: "jq",
+                                    features: "Querying compositor monitor geometries and window states",
+                                    present: Boolean(depsWrapper.depStatus["jq"])
+                                }
+                            ]
+
+                            delegate: SettingsRow {
+                                iconName: modelData.present ? "check_circle" : "error"
+                                iconColor: modelData.present ? Theme.success : Theme.error
+                                title: modelData.pkg
+                                subtitle: I18n.tr("Used for: %1").arg(modelData.features)
+                                trailingBadge: modelData.present ? I18n.tr("Installed") : I18n.tr("Missing")
+                                trailingBadgeColor: modelData.present ? Theme.surfaceVariantText : Theme.error
+                            }
+                        }
+                    }
                 }
             }
         }
